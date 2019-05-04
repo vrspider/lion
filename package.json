@@ -8,6 +8,7 @@
   "devDependencies": {
     "@commitlint/cli": "^7.0.0",
     "@commitlint/config-conventional": "^7.0.0",
+    "@open-wc/building-rollup": "^0.3.3",
     "@open-wc/demoing-storybook": "^0.2.0",
     "@open-wc/eslint-config": "^0.4.5",
     "@open-wc/prettier-config": "^0.1.0",
@@ -17,6 +18,7 @@
     "@webcomponents/webcomponentsjs": "^2.2.5",
     "babel-eslint": "^8.2.6",
     "babel-polyfill": "^6.26.0",
+    "bundlesize": "^0.17.1",
     "eclint": "^2.8.1",
     "eslint": "^5.14.1",
     "eslint-config-prettier": "^4.0.0",
@@ -26,6 +28,8 @@
     "lerna": "3.4.3",
     "lint-staged": "^8.0.0",
     "npm-run-all": "^4.1.5",
+    "rimraf": "^2.6.3",
+    "rollup": "^1.11.2",
     "sinon": "^7.2.2",
     "webpack-merge": "^4.1.5",
     "whatwg-fetch": "^3.0.0"
@@ -47,7 +51,8 @@
     "lint:prettier": "prettier '**/*.js' --list-different || (echo '↑↑ these files are not prettier formatted ↑↑' && exit 1)",
     "format": "npm run format:eslint && npm run format:prettier",
     "format:eslint": "eslint --ext .js,.html . --fix",
-    "format:prettier": "prettier '**/*.js' --write"
+    "format:prettier": "prettier '**/*.js' --write",
+    "bundlesize": "rollup -c bundlesize/rollup.config.js && bundlesize"
   },
   "lint-staged": {
     "*": [
@@ -59,5 +64,19 @@
       "prettier --write",
       "git add"
     ]
-  }
+  },
+  "bundlesize": [
+    {
+      "path": "./bundlesize/dist/core/core.js",
+      "maxSize": "10 kB"
+    },
+    {
+      "path": "./bundlesize/dist/average-app/average-app.js",
+      "maxSize": "30 kB"
+    },
+    {
+      "path": "./bundlesize/dist/all/all.js",
+      "maxSize": "30 kB"
+    }
+  ]
 }

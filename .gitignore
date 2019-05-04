@@ -17,6 +17,7 @@ npm-debug.log
 ## build artifacts
 /lib/
 /build/
+/bundlesize/dist/
 
 ## temp folders
 /.tmp/
