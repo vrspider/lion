@@ -220,6 +220,10 @@ export const FormatMixin = dedupeMixin(
         this.__preventRecursiveTrigger = false;
       }
 
+      __callPreprocessor(value = this.value) {
+        return this.preprocessor(value, this.preprocessOptions);
+      }
+
       __callParser(value = this.formattedValue) {
         // A) check if we need to parse at all
 
