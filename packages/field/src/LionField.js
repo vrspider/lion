@@ -194,7 +194,7 @@ export class LionField extends FormControlMixin(
     return {
       required:
         (typeof modelValue === 'string' && modelValue !== '') ||
-        (typeof modelValue !== 'string' && typeof modelValue !== 'undefined'), // TODO: && modelValue !== null ?
+        (typeof modelValue !== 'string' && modelValue !== undefined), // TODO: && modelValue !== null ?
     };
   }
 }
