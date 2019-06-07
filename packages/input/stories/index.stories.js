@@ -6,7 +6,7 @@ storiesOf('Forms|Input', module)
   .add(
     'Default',
     () => html`
-      <lion-input label="First Name"></lion-input>
+      <lion-input .preprocessor="${v => v.replace('a', '')}" label="First Name"></lion-input>
     `,
   )
   .add(
