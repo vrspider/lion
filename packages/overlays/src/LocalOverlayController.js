@@ -64,7 +64,11 @@ export class LocalOverlayController {
 
     this.invokerNode.setAttribute('aria-expanded', this.isShown);
     this.invokerNode.setAttribute('aria-controls', this.contentId);
+    // [a11y] TODO: this is only needed for tooltips, I assume?
+    // Also, we should allow to configure tooltips in such a way that we can use
+    // aria-labelledby instead: https://inclusive-components.design/tooltips-toggletips/
     this.invokerNode.setAttribute('aria-describedby', this.contentId);
+    // Also, we should add role="tooltip" on this.contentNode ?
   }
 
   /**
@@ -127,7 +131,7 @@ export class LocalOverlayController {
       this._containFocusHandler.disconnect();
       this._containFocusHandler = undefined; // eslint-disable-line no-param-reassign
     }
-    this._containFocusHandler = containFocus(this.content.firstElementChild);
+    this._containFocusHandler = containFocus(this.contentNode);
   }
 
   _setupHidesOnEsc() {

@@ -20,6 +20,7 @@ import { keyCodes } from './key-codes.js';
 export function rotateFocus(rootElement, e) {
   // Find focusable elements
   const els = getFocusableElements(rootElement);
+  debugger;
   // Determine the focus rotation boundaries.
   let boundaryEls;
 
@@ -72,6 +73,7 @@ export function rotateFocus(rootElement, e) {
  */
 export function containFocus(rootElement) {
   const focusableElements = getFocusableElements(rootElement);
+  debugger;
   // Initial focus goes to first element with autofocus, or the root element
   const initialFocus = focusableElements.find(e => e.hasAttribute('autofocus')) || rootElement;
 
