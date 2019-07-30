@@ -33,7 +33,7 @@
     "whatwg-fetch": "^3.0.0"
   },
   "scripts": {
-    "start": "npm run storybook",
+    "start": "npm run storybook2",
     "storybook": "start-storybook -p 9001 -s ./assets",
     "storybook:build": "build-storybook -s ./assets",
     "test": "karma start --coverage",
