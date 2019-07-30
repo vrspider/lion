@@ -8,5 +8,5 @@
       "conventionalCommits": true
     }
   },
-  "ignoreChanges": ["**/tests/**", "**/*.md"]
+  "ignoreChanges": ["**/test/**", "**/*.md"]
 }
