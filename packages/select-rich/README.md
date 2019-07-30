@@ -2,7 +2,7 @@
 
 [//]: # 'AUTO INSERT HEADER PREPUBLISH'
 
-`lion-select-rich` component is a 'rich' version of the native `<select>` element.
+`lion-select-rich` component a is a 'rich' version of the native `<select>` element.
 It allows to provide fully customized options and a fully customized invoker button.
 The component is meant to be used whenever the native `<select>` doesn't provide enough
 styling/theming/user interaction opportunities.
