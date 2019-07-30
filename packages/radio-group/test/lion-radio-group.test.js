@@ -3,6 +3,8 @@ import '@lion/radio/lion-radio.js';
 
 import '../lion-radio-group.js';
 
+// ignore
+
 describe('<lion-radio-group>', () => {
   it('has a single checkedValue representing the currently checked radio value', async () => {
     const el = await fixture(html`
