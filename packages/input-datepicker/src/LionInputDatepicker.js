@@ -173,28 +173,6 @@ export class LionInputDatepicker extends LionInputDate {
   }
 
   /**
-   * Problem: we need to create a getter for disabled that puts disabled attrs on the invoker
-   * button.
-   * The DelegateMixin creates getters and setters regardless of what's defined on the prototype,
-   * thats why we need to move it out from parent delegations config, in order to make our own
-   * getters and setters work.
-   *
-   * TODO: [delegation of disabled] fix this on a global level:
-   * - LionField
-   *  - move all delegations of attrs and props to static get props for docs
-   * - DelegateMixin needs to be refactored, so that it:
-   *   - gets config from static get properties
-   *   - hooks into _requestUpdate
-   */
-  get delegations() {
-    return {
-      ...super.delegations,
-      properties: super.delegations.properties.filter(p => p !== 'disabled'),
-      attributes: super.delegations.attributes.filter(p => p !== 'disabled'),
-    };
-  }
-
-  /**
    * TODO: [delegation of disabled] move this to LionField (or FormControl) level
    */
   _requestUpdate(name, oldValue) {
