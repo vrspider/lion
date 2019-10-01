@@ -109,6 +109,7 @@ export class GlobalOverlayController extends BaseOverlayController {
     this.__showHideMode = 'css';
     if (this.isShown === false) {
       this.content.style.display = 'none';
+      console.log('zjow heed');
       this.__showHideViaCss();
     }
   }
@@ -143,6 +144,8 @@ export class GlobalOverlayController extends BaseOverlayController {
     if (!this.contentNode) {
       return;
     }
+
+    console.log('show hide via css', this.contentNode, this.isShown);
 
     if (this.isShown) {
       this.content.style.display = '';

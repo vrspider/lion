@@ -160,6 +160,7 @@ export class BaseOverlayController {
         this.__showHideViaDom();
         this.__firstContentTemplateRender = true;
       }
+      console.log('befor showheit');
       this.__showHideViaCss();
     }
   }

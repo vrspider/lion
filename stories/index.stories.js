@@ -32,3 +32,4 @@ import '../packages/option/stories/index.stories.js';
 import '../packages/select-rich/stories/index.stories.js';
 
 import '../packages/account/stories/index.stories.js';
+import '../packages/select-account/stories/index.stories.js';

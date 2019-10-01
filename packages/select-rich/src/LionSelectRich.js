@@ -293,15 +293,15 @@ export class LionSelectRich extends FormRegistrarMixin(
     this.__onChildModelValueChanged = this.__onChildModelValueChanged.bind(this);
     this.__onKeyUp = this.__onKeyUp.bind(this);
 
-    this.addEventListener('active-changed', this.__onChildActiveChanged);
-    this.addEventListener('model-value-changed', this.__onChildModelValueChanged);
-    this.addEventListener('keyup', this.__onKeyUp);
+    this._listboxNode.addEventListener('active-changed', this.__onChildActiveChanged);
+    this._listboxNode.addEventListener('model-value-changed', this.__onChildModelValueChanged);
+    this._listboxNode.addEventListener('keyup', this.__onKeyUp);
   }
 
   __teardownEventListeners() {
-    this.removeEventListener('active-changed', this.__onChildActiveChanged);
-    this.removeEventListener('model-value-changed', this.__onChildModelValueChanged);
-    this.removeEventListener('keyup', this.__onKeyUp);
+    this._listboxNode.removeEventListener('active-changed', this.__onChildActiveChanged);
+    this._listboxNode.removeEventListener('model-value-changed', this.__onChildModelValueChanged);
+    this._listboxNode.removeEventListener('keyup', this.__onKeyUp);
   }
 
   __onChildActiveChanged({ target }) {
@@ -323,6 +323,8 @@ export class LionSelectRich extends FormRegistrarMixin(
   }
 
   __onChildModelValueChanged({ target }) {
+    console.log('__onChildModelValueChanged');
+
     if (target.checked) {
       this.formElements.forEach(formElement => {
         if (formElement !== target) {
@@ -331,10 +333,13 @@ export class LionSelectRich extends FormRegistrarMixin(
         }
       });
     }
+    console.log('__onChildModelValueChanged',  this._getFromAllFormElements('modelValue'));
     this.modelValue = this._getFromAllFormElements('modelValue');
   }
 
   __onModelValueChanged() {
+    console.log('__onModelValueChanged');
+
     this.__isSyncingCheckedAndModelValue = true;
 
     const foundChecked = this.modelValue.find(subModelValue => subModelValue.checked);
