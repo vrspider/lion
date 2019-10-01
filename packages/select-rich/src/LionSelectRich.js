@@ -580,6 +580,7 @@ export class LionSelectRich extends FormRegistrarMixin(
     });
 
     this.__overlayOnShow = () => {
+      console.log('__overlayOnShow');
       this.opened = true;
       if (this.checkedIndex) {
         this.activeIndex = this.checkedIndex;
