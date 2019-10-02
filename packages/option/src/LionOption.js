@@ -89,16 +89,11 @@ export class LionOption extends DisabledMixin(ChoiceInputMixin(FormRegisteringMi
 
   __registerEventListeners() {
     this.__onClick = () => {
-      console.log('click option');
-
       if (!this.disabled) {
-        console.log('change checked of option');
         this.checked = true;
       }
     };
     this.__onMouseEnter = () => {
-      console.log('mouse enter');
-
       if (!this.disabled) {
         this.active = true;
       }

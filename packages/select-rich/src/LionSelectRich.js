@@ -98,7 +98,7 @@ export class LionSelectRich extends FormRegistrarMixin(
   }
 
   get _listboxNode() {
-    return this.querySelector('[slot=input]');
+    return (this.__overlay && this.__overlay.contentNode) || this.querySelector('[slot=input]');
   }
 
   get _listboxActiveDescendantNode() {
@@ -132,7 +132,7 @@ export class LionSelectRich extends FormRegistrarMixin(
     super();
     this.interactionMode = 'auto';
     this.disabled = false;
-    this.opened = false;
+    // this.opened = false;
     // for interaction states
     // we use a different event as 'model-value-changed' would bubble up from all options
     this._valueChangedEvent = 'select-model-value-changed';
@@ -187,15 +187,27 @@ export class LionSelectRich extends FormRegistrarMixin(
     }
   }
 
+  get opened() {
+    return this.__overlay.isShown;
+  }
+
+  set opened(show) {
+    if (show) {
+      this.__overlay.show();
+    } else {
+      this.__overlay.hide();
+    }
+  }
+
   updated(changedProps) {
     super.updated(changedProps);
-    if (changedProps.has('opened')) {
-      if (this.opened) {
-        this.__overlay.show();
-      } else {
-        this.__overlay.hide();
-      }
-    }
+    // if (changedProps.has('opened')) {
+    //   if (this.opened) {
+    //     this.__overlay.show();
+    //   } else {
+    //     this.__overlay.hide();
+    //   }
+    // }
 
     if (changedProps.has('disabled')) {
       if (this.disabled) {
@@ -323,8 +335,6 @@ export class LionSelectRich extends FormRegistrarMixin(
   }
 
   __onChildModelValueChanged({ target }) {
-    console.log('__onChildModelValueChanged');
-
     if (target.checked) {
       this.formElements.forEach(formElement => {
         if (formElement !== target) {
@@ -333,13 +343,10 @@ export class LionSelectRich extends FormRegistrarMixin(
         }
       });
     }
-    console.log('__onChildModelValueChanged',  this._getFromAllFormElements('modelValue'));
     this.modelValue = this._getFromAllFormElements('modelValue');
   }
 
   __onModelValueChanged() {
-    console.log('__onModelValueChanged');
-
     this.__isSyncingCheckedAndModelValue = true;
 
     const foundChecked = this.modelValue.find(subModelValue => subModelValue.checked);
@@ -585,8 +592,6 @@ export class LionSelectRich extends FormRegistrarMixin(
     });
 
     this.__overlayOnShow = () => {
-      console.log('__overlayOnShow');
-      this.opened = true;
       if (this.checkedIndex) {
         this.activeIndex = this.checkedIndex;
       }
@@ -595,7 +600,7 @@ export class LionSelectRich extends FormRegistrarMixin(
     this.__overlay.addEventListener('show', this.__overlayOnShow);
 
     this.__overlayOnHide = () => {
-      this.opened = false;
+      // this.opened = false;
       this._invokerNode.focus();
     };
     this.__overlay.addEventListener('hide', this.__overlayOnHide);
