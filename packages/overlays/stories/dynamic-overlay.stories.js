@@ -46,23 +46,29 @@ const dynamicOverlayDemoStyle = css`
   }
 `;
 
-storiesOf('Dynamic Overlay System| Switching Overlays', module)
-  .add('Switch overlays configuration', () => {
+storiesOf('Dynamic Overlay System| Switching Overlays', module).add(
+  'Switch overlays configuration',
+  () => {
     const invokerNode = document.createElement('button');
     invokerNode.innerHTML = 'Invoker Button';
 
     const ctrl = new OverlayController({
       ...withBottomSheetConfig(),
       hidesOnOutsideClick: true,
+      trapsKeyboardFocus: true,
       invokerNode: renderToNode(html`
         <button @click="${() => ctrl.toggle()}">
           Invoker
         </button>
       `),
       contentNode: renderToNode(html`
-        <div style="background: #eee;" xclass="demo-overlay demo-overlay__global demo-overlay__global--small">
+        <div
+          style="background: #eee;"
+          xclass="demo-overlay demo-overlay__global demo-overlay__global--small"
+        >
           <p>type: ${ctrlType}</p>
           <button @click="${() => ctrl.hide()}">Close</button>
+          <button>asdsad</button>
         </div>
       `),
     });
@@ -105,4 +111,5 @@ storiesOf('Dynamic Overlay System| Switching Overlays', module)
         as dropdown
       </button>
     `;
-  });
+  },
+);

@@ -17,7 +17,7 @@ export class OverlayController extends EventTarget {
    * @param {OverlayConfig} config initial config. Will be remembered as shared config
    * when `.updateConfig()` is called.
    */
-  constructor(config) {
+  constructor(config = {}) {
     super();
 
     // Store the ctor config as it serves as shared config
@@ -47,7 +47,9 @@ export class OverlayController extends EventTarget {
 
     this._contentNodeWrapper = document.createElement('div');
     // this._contentNodeWrapper.style.display = 'none';
-    this._contentId = `overlay-content--${Math.random().toString(36).substr(2, 10)}`;
+    this._contentId = `overlay-content--${Math.random()
+      .toString(36)
+      .substr(2, 10)}`;
 
     this.updateConfig(config);
   }
@@ -89,13 +91,26 @@ export class OverlayController extends EventTarget {
     const newCfg = {
       ...this._defaultConfig, // our basic ingredients
       ...this.__sharedConfig, // the initial configured overlayController
-      ...cfgToAdd , // the updated config
+      ...cfgToAdd, // the updated config
     };
     if (newCfg.viewportConfig && newCfg.popperConfig) {
       newCfg.viewportConfig = this.__prevConfig.viewportConfig ? null : newCfg.viewportConfig;
       newCfg.popperConfig = this.__prevConfig.popperConfig ? null : newCfg.popperConfig;
     }
     this.config = newCfg;
+
+    if (this.config && !this.config.placementMode) {
+      throw new Error('You need to provide a .placementMode');
+    }
+
+    if (this.config && ['global', 'local'].indexOf(this.config.placementMode) !== -1) {
+      throw new Error('You need to provide a .placementMode');
+    }
+
+    if (this.config && !this.config.contentNode) {
+      throw new Error('You need to provide a .contentNode');
+    }
+
     Object.assign(this, this.config);
     this._init();
   }
@@ -103,7 +118,8 @@ export class OverlayController extends EventTarget {
   async _init() {
     this._initConnectionTarget();
     this._initZIndex();
-    if (this._rendersToLocalInsertionPoint) { // 'Local'
+    if (this._rendersToLocalInsertionPoint) {
+      // 'Local'
       // Now, it's time to lazily load Popper if not done yet
       // Do we really want to add display: inline or is this up to user?
       if (!this.constructor.popperModule) {
@@ -119,7 +135,7 @@ export class OverlayController extends EventTarget {
     // wrapper can lead to problems with event listeners being applied inside
     // contentNode (see select-rich demo with switching overlays)
     const attrsToRemove = Array.from(this._contentNodeWrapper.attributes);
-    attrsToRemove.forEach((attrObj) => {
+    attrsToRemove.forEach(attrObj => {
       console.log(attrObj.name);
       this._contentNodeWrapper.removeAttribute(attrObj.name);
     });
@@ -135,7 +151,10 @@ export class OverlayController extends EventTarget {
         this._renderTarget.appendChild(this._contentNodeWrapper);
       } else {
         // When a local overlay is not connected to dom yet
-        this.invokerNode.parentNode.insertBefore(this._contentNodeWrapper, this.invokerNode.nextSibling);
+        this.invokerNode.parentNode.insertBefore(
+          this._contentNodeWrapper,
+          this.invokerNode.nextSibling,
+        );
       }
     }
   }
@@ -159,10 +178,14 @@ export class OverlayController extends EventTarget {
    * @param {HTMLElement} elementToFocusAfterHide
    */
   async show(elementToFocusAfterHide = this.elementToFocusAfterHide) {
+    if (this.isShown) {
+      return;
+    }
     this.dispatchEvent(new Event('before-show'));
+
     this._handleFeatures();
     this._contentNodeWrapper.style.display = '';
-    this._setFocus(elementToFocusAfterHide);
+    // this._setFocus(elementToFocusAfterHide);
     this.dispatchEvent(new Event('show'));
   }
 
@@ -173,8 +196,7 @@ export class OverlayController extends EventTarget {
       this._contentNodeWrapper.classList[addOrRemove](GLOBAL_OVERLAYS_CONTAINER_CLASS);
       this._contentNodeWrapper.classList[addOrRemove](placementClass);
       this.contentNode.classList[addOrRemove](GLOBAL_OVERLAYS_CLASS);
-    }
-    else if (this._rendersToLocalInsertionPoint) {
+    } else if (this._rendersToLocalInsertionPoint) {
       /**
        * Popper is weird about properly positioning the popper element when it is recreated so
        * we just recreate the popper instance to make it behave like it should.
@@ -197,8 +219,9 @@ export class OverlayController extends EventTarget {
    * @event before-hide right before the overlay hides. Used for animations and switching overlays
    * @event hide right after the overlay is hidden
    */
-  hide() {
-    if (!this.isShown) { // we've got nothing to hide
+  async hide() {
+    if (!this.isShown) {
+      // we've got nothing to hide
       return;
     }
 
@@ -236,11 +259,12 @@ export class OverlayController extends EventTarget {
     //   this._handleIsModal({ teardown });
     // }
     if (this.handlesAccessibility) {
-      this._handleAccessibility({ teardown })
+      this._handleAccessibility({ teardown });
     }
   }
 
-  _handlePreventsScroll({ teardown } = {}) { // eslint-disable-line
+  _handlePreventsScroll({ teardown } = {}) {
+    // eslint-disable-line
     const addOrRemove = teardown ? 'remove' : 'add';
     document.body.classList[addOrRemove]('global-overlays-scroll-lock');
     if (isIOS) {
@@ -285,8 +309,7 @@ export class OverlayController extends EventTarget {
       if (animation === true) {
         this.backdropNode.classList.add('global-overlays__backdrop--fade-in');
       }
-    }
-    else {
+    } else {
       const { backdropNode } = this;
       if (!backdropNode) {
         return;
@@ -310,7 +333,7 @@ export class OverlayController extends EventTarget {
       if (this.manager) {
         this.manager.disableTrapsKeyboardFocusForAll();
       }
-      this._containFocusHandler = containFocus(this._contentNodeWrapper);
+      this._containFocusHandler = containFocus(this.contentNode);
 
       if (this.manager) {
         this.manager.informTrapsKeyboardFocusGotEnabled();
@@ -329,7 +352,7 @@ export class OverlayController extends EventTarget {
 
   _handleHidesOnEsc({ teardown } = {}) {
     if (!teardown) {
-      this.__escKeyHandler = (ev) => (ev.key === 'Escape') && this.hide();
+      this.__escKeyHandler = ev => ev.key === 'Escape' && this.hide();
       this._contentNodeWrapper.addEventListener('keyup', this.__escKeyHandler);
     } else {
       this._contentNodeWrapper.removeEventListener('keyup', this.__escKeyHandler);
