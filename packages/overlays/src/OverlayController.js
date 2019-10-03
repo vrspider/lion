@@ -80,7 +80,7 @@ export class OverlayController extends EventTarget {
    */
   updateConfig(cfgToAdd) {
     // teardown all previous configs
-    this._handleFeatures({ teardown: true });
+    this._handleFeatures({ phase: 'teardown' });
 
     if (cfgToAdd.contentNode && cfgToAdd.contentNode.isConnected) {
       // We need to keep track of the original local context.
@@ -99,15 +99,15 @@ export class OverlayController extends EventTarget {
     }
     this.config = newCfg;
 
-    if (this.config && !this.config.placementMode) {
-      throw new Error('You need to provide a .placementMode');
+    if (!this.config.placementMode) {
+      throw new Error('You need to provide a .placementMode ("global"|"local")');
     }
 
-    if (this.config && ['global', 'local'].indexOf(this.config.placementMode) !== -1) {
-      throw new Error('You need to provide a .placementMode');
+    if (!['global', 'local'].includes(this.config.placementMode)) {
+      throw new Error(`"${this.config.placementMode}" is not a valid .placementMode, use ("global"|"local")`);
     }
 
-    if (this.config && !this.config.contentNode) {
+    if (!this.config.contentNode) {
       throw new Error('You need to provide a .contentNode');
     }
 
@@ -119,7 +119,6 @@ export class OverlayController extends EventTarget {
     this._initConnectionTarget();
     this._initZIndex();
     if (this._rendersToLocalInsertionPoint) {
-      // 'Local'
       // Now, it's time to lazily load Popper if not done yet
       // Do we really want to add display: inline or is this up to user?
       if (!this.constructor.popperModule) {
@@ -131,12 +130,11 @@ export class OverlayController extends EventTarget {
   }
 
   _initConnectionTarget() {
-    // Cleanup ._contentNodeWrapper. We do this, because creating a fresh
-    // wrapper can lead to problems with event listeners being applied inside
-    // contentNode (see select-rich demo with switching overlays)
+    // Cleanup ._contentNodeWrapper. We do this, because creating a fresh wrapper
+    // can lead to problems with event listeners being applied inside contentNode
+    // (see select-rich demo with switching overlays)
     const attrsToRemove = Array.from(this._contentNodeWrapper.attributes);
     attrsToRemove.forEach(attrObj => {
-      console.log(attrObj.name);
       this._contentNodeWrapper.removeAttribute(attrObj.name);
     });
     this._contentNodeWrapper.style.cssText = null;
@@ -161,7 +159,7 @@ export class OverlayController extends EventTarget {
 
   _initZIndex() {
     if (!this._rendersToBody && !getComputedStyle(this.contentNode).zIndex) {
-      /* To display on top of elements with no z-index that are appear later in the DOM */
+      // To display on top of elements with no z-index that are appear later in the DOM
       this._contentNodeWrapper.style.zIndex = 1;
     } else {
       this._contentNodeWrapper.style.zIndex = '';
@@ -183,20 +181,21 @@ export class OverlayController extends EventTarget {
     }
     this.dispatchEvent(new Event('before-show'));
 
-    this._handleFeatures();
+    this._handleFeatures({ phase: 'setup' });
     this._contentNodeWrapper.style.display = '';
-    // this._setFocus(elementToFocusAfterHide);
+    this.elementToFocusAfterHide = elementToFocusAfterHide;
     this.dispatchEvent(new Event('show'));
   }
 
-  async _handlePosition({ teardown } = {}) {
-    if (this._rendersToBody) {
-      const addOrRemove = teardown ? 'remove' : 'add';
+  async _handlePosition({ phase = 'setup' } = {}) {
+    if (this.placementMode === 'global') {
+      const addOrRemove = (phase === 'setup') ? 'add' : 'remove';
       const placementClass = `${GLOBAL_OVERLAYS_CONTAINER_CLASS}--${this.viewportConfig.placement}`;
       this._contentNodeWrapper.classList[addOrRemove](GLOBAL_OVERLAYS_CONTAINER_CLASS);
       this._contentNodeWrapper.classList[addOrRemove](placementClass);
       this.contentNode.classList[addOrRemove](GLOBAL_OVERLAYS_CLASS);
-    } else if (this._rendersToLocalInsertionPoint) {
+    }
+    else if (this.placementMode === 'local') {
       /**
        * Popper is weird about properly positioning the popper element when it is recreated so
        * we just recreate the popper instance to make it behave like it should.
@@ -209,63 +208,66 @@ export class OverlayController extends EventTarget {
     }
   }
 
-  _setFocus(elementToFocusAfterHide) {
-    if (this._contentNodeWrapper.activeElement) {
-      elementToFocusAfterHide.focus();
-    }
-  }
-
   /**
    * @event before-hide right before the overlay hides. Used for animations and switching overlays
    * @event hide right after the overlay is hidden
    */
   async hide() {
     if (!this.isShown) {
-      // we've got nothing to hide
       return;
     }
 
     this.dispatchEvent(new Event('before-hide'));
     this._contentNodeWrapper.style.display = 'none';
-    this._handleFeatures({ teardown: true });
+    this._handleFeatures({ phase: 'teardown' });
     this.dispatchEvent(new Event('hide'));
+    this._restoreFocus();
+  }
+
+  _restoreFocus() {
+    if (this._contentNodeWrapper.activeElement) {
+      this.elementToFocusAfterHide.focus();
+    }
   }
 
   toggle() {
     this.isShown ? this.hide() : this.show(); // eslint-disable-line
   }
 
-  _handleFeatures({ teardown = false } = {}) {
-    this._handlePosition({ teardown });
+  /**
+   * @desc All features are handled here. Every feature is set up on show
+   * and torn
+   * @param {object} config
+   * @param {'setup'|'teardown'} config.phase
+   */
+  _handleFeatures({ phase = 'setup' } = {}) {
+    this._handlePosition({ phase });
     if (this.preventsScroll) {
-      this._handlePreventsScroll({ teardown });
+      this._handlePreventsScroll({ phase });
     }
     if (this.isBlocking) {
-      this._handleBlocking({ teardown });
+      this._handleBlocking({ phase });
     }
     if (this.hasBackdrop) {
-      this._handleBackdrop({ teardown, renderTarget: this._renderTarget });
+      this._handleBackdrop({ phase, renderTarget: this._renderTarget });
     }
     if (this.trapsKeyboardFocus) {
-      this._handleTrapsKeyboardFocus({ teardown });
+      this._handleTrapsKeyboardFocus({ phase });
     }
     if (this.hidesOnEsc) {
-      this._handleHidesOnEsc({ teardown });
+      this._handleHidesOnEsc({ phase });
     }
     if (this.hidesOnOutsideClick) {
-      this._handleHidesOnOutsideClick({ teardown });
+      this._handleHidesOnOutsideClick({ phase });
     }
-    // if (this.isModal) {
-    //   this._handleIsModal({ teardown });
-    // }
     if (this.handlesAccessibility) {
-      this._handleAccessibility({ teardown });
+      this._handleAccessibility({ phase });
     }
   }
 
-  _handlePreventsScroll({ teardown } = {}) {
+  _handlePreventsScroll({ phase = 'setup' } = {}) { // eslint-disable-line class-methods-use-this
     // eslint-disable-line
-    const addOrRemove = teardown ? 'remove' : 'add';
+    const addOrRemove = (phase === 'setup') ? 'add' : 'remove';
     document.body.classList[addOrRemove]('global-overlays-scroll-lock');
     if (isIOS) {
       // iOS has issues with overlays with input fields. This is fixed by applying
@@ -300,8 +302,8 @@ export class OverlayController extends EventTarget {
    * it is removed. Otherwise this is the first time displaying a backdrop, so a fade-in
    * animation is played.
    */
-  _handleBackdrop({ animation = true, renderTarget, teardown } = {}) {
-    if (!teardown) {
+  _handleBackdrop({ animation = true, renderTarget, phase = setup } = {}) {
+    if (phase === 'setup') {
       this.backdropNode = document.createElement('div');
       this.backdropNode.classList.add('global-overlays__backdrop');
       renderTarget.insertBefore(this.backdropNode, this._contentNodeWrapper);
@@ -309,7 +311,7 @@ export class OverlayController extends EventTarget {
       if (animation === true) {
         this.backdropNode.classList.add('global-overlays__backdrop--fade-in');
       }
-    } else {
+    } else if (phase === 'teardown') {
       const { backdropNode } = this;
       if (!backdropNode) {
         return;
@@ -328,8 +330,8 @@ export class OverlayController extends EventTarget {
     }
   }
 
-  _handleTrapsKeyboardFocus({ teardown, findNewTrap = true } = {}) {
-    if (!teardown) {
+  _handleTrapsKeyboardFocus({ phase = 'setup', findNewTrap = true } = {}) {
+    if (phase === 'setup') {
       if (this.manager) {
         this.manager.disableTrapsKeyboardFocusForAll();
       }
@@ -338,7 +340,8 @@ export class OverlayController extends EventTarget {
       if (this.manager) {
         this.manager.informTrapsKeyboardFocusGotEnabled();
       }
-    } else {
+    }
+    else if (phase === 'teardown') {
       if (this._containFocusHandler) {
         this._containFocusHandler.disconnect();
         this._containFocusHandler = undefined;
@@ -350,17 +353,18 @@ export class OverlayController extends EventTarget {
     }
   }
 
-  _handleHidesOnEsc({ teardown } = {}) {
-    if (!teardown) {
+  _handleHidesOnEsc({ phase = 'setup' } = {}) {
+    if (phase === 'setup') {
       this.__escKeyHandler = ev => ev.key === 'Escape' && this.hide();
       this._contentNodeWrapper.addEventListener('keyup', this.__escKeyHandler);
-    } else {
+    }
+    else if (phase === 'teardown') {
       this._contentNodeWrapper.removeEventListener('keyup', this.__escKeyHandler);
     }
   }
 
   _handleAccessibility() {
-    // const setOrRemoveAttr = teardown ? 'setAttribute' : 'removeAttribute';
+    // TODO: add setup props in object and restore on teardown
     if (this.isTooltip) {
       // TODO: this could also be labelledby
       this.invokerNode.setAttribute('aria-describedby', this._contentId);
@@ -390,10 +394,10 @@ export class OverlayController extends EventTarget {
     }
   }
 
-  _handleHidesOnOutsideClick({ teardown } = {}) {
-    const addOrRemoveListener = teardown ? 'removeEventListener' : 'addEventListener';
+  _handleHidesOnOutsideClick({ phase = 'setup' } = {}) {
+    const addOrRemoveListener = (phase === 'setup') ? 'addEventListener' : 'removeEventListener';
 
-    if (!teardown) {
+    if (phase === 'setup') {
       let wasClickInside = false;
       // handle on capture phase and remember till the next task that there was an inside click
       this.__preventCloseOutsideClick = () => {
