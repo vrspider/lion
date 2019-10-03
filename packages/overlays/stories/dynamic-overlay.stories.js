@@ -60,14 +60,16 @@ storiesOf('Dynamic Overlay System| Switching Overlays', module)
         </button>
       `),
       contentNode: renderToNode(html`
-        <div class="demo-overlay demo-overlay__global demo-overlay__global--small">
-          <p>I am for small screens < 600px</p>
+        <div style="background: #eee;" xclass="demo-overlay demo-overlay__global demo-overlay__global--small">
+          <p>type: ${ctrlType}</p>
           <button @click="${() => ctrl.hide()}">Close</button>
         </div>
       `),
     });
 
+    let ctrlType = document.createElement('div');
     function switchTo(type) {
+      ctrlType.innerHTML = type;
       switch (type) {
         case 'bottom-sheet':
           ctrl.updateConfig(withBottomSheetConfig());
@@ -99,8 +101,8 @@ storiesOf('Dynamic Overlay System| Switching Overlays', module)
         as bottom sheet
       </button>
 
-      <!-- <button @click="${() => switchTo('dropdown')}">
+      <button @click="${() => switchTo('dropdown')}">
         as dropdown
-      </button> -->
+      </button>
     `;
   });

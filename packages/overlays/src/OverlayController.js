@@ -46,7 +46,7 @@ export class OverlayController extends EventTarget {
     overlays.add(this);
 
     this._contentNodeWrapper = document.createElement('div');
-    this._contentNodeWrapper.style.display = 'none';
+    // this._contentNodeWrapper.style.display = 'none';
     this._contentId = `overlay-content--${Math.random().toString(36).substr(2, 10)}`;
 
     this.updateConfig(config);
@@ -74,27 +74,35 @@ export class OverlayController extends EventTarget {
    * presentation of the overlay changes depending on screen size.
    * Note that this method is the only allowed way to update a configuration of an
    * Overlay Controller
-   * @param {OverlayConfig} config
+   * @param {OverlayConfig} newConfig
    */
-  updateConfig(config) {
+  updateConfig(cfgToAdd) {
     // teardown all previous configs
     this._handleFeatures({ teardown: true });
 
-    if (config.contentNode) {
+    if (cfgToAdd.contentNode && cfgToAdd.contentNode.isConnected) {
       // We need to keep track of the original local context.
-      this.__originalContentParent = config.contentNode.parentElement;
+      this.__originalContentParent = cfgToAdd.contentNode.parentElement;
     }
-    const newConfig = {
+    this.__prevConfig = this.config || {};
+
+    const newCfg = {
       ...this._defaultConfig, // our basic ingredients
       ...this.__sharedConfig, // the initial configured overlayController
-      ...config , // the updated config
+      ...cfgToAdd , // the updated config
     };
-    this.__prevContentNode = this.contentNode;
-    Object.assign(this, newConfig);
-    this._init(newConfig);
+    if (newCfg.viewportConfig && newCfg.popperConfig) {
+      newCfg.viewportConfig = this.__prevConfig.viewportConfig ? null : newCfg.viewportConfig;
+      newCfg.popperConfig = this.__prevConfig.popperConfig ? null : newCfg.popperConfig;
+    }
+    this.config = newCfg;
+    Object.assign(this, this.config);
+    this._init();
   }
 
   async _init() {
+    this._initConnectionTarget();
+    this._initZIndex();
     if (this._rendersToLocalInsertionPoint) { // 'Local'
       // Now, it's time to lazily load Popper if not done yet
       // Do we really want to add display: inline or is this up to user?
@@ -102,27 +110,33 @@ export class OverlayController extends EventTarget {
         // TODO: Instead, prefetch it or use a preloader-manager to load it during idle time
         this.constructor.popperModule = preloadPopper();
       }
-      this.__mergePopperConfigs(this.popperConfig || {})
-      /**
-       * Popper is weird about properly positioning the popper element when it is recreated so
-       * we just recreate the popper instance to make it behave like it should.
-       * Probably related to this issue: https://github.com/FezVrasta/popper.js/issues/796
-       * calling just the .update() function on the popper instance sadly does not resolve this.
-       * This is however necessary for initial placement.
-       */
-      if (this.invokerNode && this.contentNode) {
-        await this.__createPopperInstance();
-        this._popper.update();
-      }
+      this.__mergePopperConfigs(this.popperConfig || {});
     }
+  }
 
-    this._initZIndex();
-    // Initialize content position in dom
-    if (this.contentNode !== this.__prevContentNode) {
+  _initConnectionTarget() {
+    // Cleanup ._contentNodeWrapper. We do this, because creating a fresh
+    // wrapper can lead to problems with event listeners being applied inside
+    // contentNode (see select-rich demo with switching overlays)
+    const attrsToRemove = Array.from(this._contentNodeWrapper.attributes);
+    attrsToRemove.forEach((attrObj) => {
+      console.log(attrObj.name);
+      this._contentNodeWrapper.removeAttribute(attrObj.name);
+    });
+    this._contentNodeWrapper.style.cssText = null;
+    this._contentNodeWrapper.style.display = 'none';
+
+    // Now, add our node to the rightplace in dom (rendeTarget)
+    if (this.contentNode !== this.__prevConfig.contentNode) {
       this._contentNodeWrapper.appendChild(this.contentNode);
     }
     if (this._renderTarget !== this._contentNodeWrapper.parentNode) {
-      this._renderTarget.appendChild(this._contentNodeWrapper);
+      if (this._renderTarget) {
+        this._renderTarget.appendChild(this._contentNodeWrapper);
+      } else {
+        // When a local overlay is not connected to dom yet
+        this.invokerNode.parentNode.insertBefore(this._contentNodeWrapper, this.invokerNode.nextSibling);
+      }
     }
   }
 
@@ -161,6 +175,13 @@ export class OverlayController extends EventTarget {
       this.contentNode.classList[addOrRemove](GLOBAL_OVERLAYS_CLASS);
     }
     else if (this._rendersToLocalInsertionPoint) {
+      /**
+       * Popper is weird about properly positioning the popper element when it is recreated so
+       * we just recreate the popper instance to make it behave like it should.
+       * Probably related to this issue: https://github.com/FezVrasta/popper.js/issues/796
+       * calling just the .update() function on the popper instance sadly does not resolve this.
+       * This is however necessary for initial placement.
+       */
       await this.__createPopperInstance();
       this._popper.update();
     }
@@ -307,9 +328,12 @@ export class OverlayController extends EventTarget {
   }
 
   _handleHidesOnEsc({ teardown } = {}) {
-    const addOrRemoveListener = teardown ? 'removeEventListener' : 'addEventListener';
-    this.__escKeyHandler = (ev) => (ev.key === 'Escape') && this.hide();
-    this._contentNodeWrapper[addOrRemoveListener]('keyup', this.__escKeyHandler);
+    if (!teardown) {
+      this.__escKeyHandler = (ev) => (ev.key === 'Escape') && this.hide();
+      this._contentNodeWrapper.addEventListener('keyup', this.__escKeyHandler);
+    } else {
+      this._contentNodeWrapper.removeEventListener('keyup', this.__escKeyHandler);
+    }
   }
 
   _handleAccessibility() {
@@ -323,6 +347,9 @@ export class OverlayController extends EventTarget {
       // aria-controls currently doesn't work perfectly
       this.invokerNode.setAttribute('aria-controls', this._contentId);
       // this.invokerNode[setOrRemoveAttr]('aria-haspopup', 'true');
+      if (!this.contentNode.hasAttribute('role')) {
+        this._contentNodeWrapper.setAttribute('role', 'dialog');
+      }
     }
   }
 
