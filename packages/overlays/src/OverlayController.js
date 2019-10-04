@@ -95,7 +95,9 @@ export class OverlayController extends EventTarget {
       throw new Error('You need to provide a .placementMode ("global"|"local")');
     }
     if (!['global', 'local'].includes(newConfig.placementMode)) {
-      throw new Error(`"${newConfig.placementMode}" is not a valid .placementMode, use ("global"|"local")`);
+      throw new Error(
+        `"${newConfig.placementMode}" is not a valid .placementMode, use ("global"|"local")`,
+      );
     }
     if (!newConfig.contentNode) {
       throw new Error('You need to provide a .contentNode');
@@ -165,7 +167,6 @@ export class OverlayController extends EventTarget {
     if (!this.contentNode.id) {
       this.contentNode.setAttribute('id', this._contentId);
     }
-
     if (this.isTooltip) {
       // TODO: this could also be labelledby
       this.invokerNode.setAttribute('aria-describedby', this._contentId);
@@ -204,13 +205,12 @@ export class OverlayController extends EventTarget {
 
   async _handlePosition({ phase = 'setup' } = {}) {
     if (this.placementMode === 'global') {
-      const addOrRemove = (phase === 'setup') ? 'add' : 'remove';
+      const addOrRemove = phase === 'setup' ? 'add' : 'remove';
       const placementClass = `${GLOBAL_OVERLAYS_CONTAINER_CLASS}--${this.viewportConfig.placement}`;
       this._contentNodeWrapper.classList[addOrRemove](GLOBAL_OVERLAYS_CONTAINER_CLASS);
       this._contentNodeWrapper.classList[addOrRemove](placementClass);
       this.contentNode.classList[addOrRemove](GLOBAL_OVERLAYS_CLASS);
-    }
-    else if (this.placementMode === 'local' && phase === 'setup') {
+    } else if (this.placementMode === 'local' && phase === 'setup') {
       /**
        * Popper is weird about properly positioning the popper element when it is recreated so
        * we just recreate the popper instance to make it behave like it should.
@@ -280,8 +280,9 @@ export class OverlayController extends EventTarget {
     }
   }
 
-  _handlePreventsScroll({ phase = 'setup' } = {}) { // eslint-disable-line class-methods-use-this
-    const addOrRemove = (phase === 'setup') ? 'add' : 'remove';
+  _handlePreventsScroll({ phase = 'setup' } = {}) {
+    // eslint-disable-line class-methods-use-this
+    const addOrRemove = phase === 'setup' ? 'add' : 'remove';
     document.body.classList[addOrRemove]('global-overlays-scroll-lock');
     if (isIOS) {
       // iOS has issues with overlays with input fields. This is fixed by applying
@@ -291,7 +292,7 @@ export class OverlayController extends EventTarget {
   }
 
   _handleBlocking({ phase = 'setup' } = {}) {
-    const addOrRemove = (phase === 'setup') ? 'add' : 'remove';
+    const addOrRemove = phase === 'setup' ? 'add' : 'remove';
     this._contentNodeWrapper.classList[addOrRemove]('global-overlays__overlay--blocking');
     if (this.backdropNode) {
       this.backdropNode.classList[addOrRemove]('global-overlays__backdrop--blocking');
@@ -299,8 +300,7 @@ export class OverlayController extends EventTarget {
 
     if (phase === 'setup') {
       this.manager.globalRootNode.classList.add('global-overlays--blocking-opened');
-    }
-    else if (phase === 'teardown') {
+    } else if (phase === 'teardown') {
       const blockingController = this.manager.shownList.find(
         ctrl => ctrl !== this && ctrl.isBlocking === true,
       );
@@ -349,13 +349,13 @@ export class OverlayController extends EventTarget {
       if (this.manager) {
         this.manager.disableTrapsKeyboardFocusForAll();
       }
+      console.log(this.contentNode);
       this._containFocusHandler = containFocus(this.contentNode);
 
       if (this.manager) {
         this.manager.informTrapsKeyboardFocusGotEnabled();
       }
-    }
-    else if (phase === 'teardown') {
+    } else if (phase === 'teardown') {
       if (this._containFocusHandler) {
         this._containFocusHandler.disconnect();
         this._containFocusHandler = undefined;
@@ -371,8 +371,7 @@ export class OverlayController extends EventTarget {
     if (phase === 'setup') {
       this.__escKeyHandler = ev => ev.key === 'Escape' && this.hide();
       this._contentNodeWrapper.addEventListener('keyup', this.__escKeyHandler);
-    }
-    else if (phase === 'teardown') {
+    } else if (phase === 'teardown') {
       this._contentNodeWrapper.removeEventListener('keyup', this.__escKeyHandler);
     }
   }
@@ -392,7 +391,7 @@ export class OverlayController extends EventTarget {
   }
 
   _handleHidesOnOutsideClick({ phase = 'setup' } = {}) {
-    const addOrRemoveListener = (phase === 'setup') ? 'addEventListener' : 'removeEventListener';
+    const addOrRemoveListener = phase === 'setup' ? 'addEventListener' : 'removeEventListener';
 
     if (phase === 'setup') {
       let wasClickInside = false;
@@ -420,7 +419,7 @@ export class OverlayController extends EventTarget {
 
   _handleAccessibility({ phase = 'setup' } = {}) {
     if (!this.isTooltip) {
-      this.invokerNode.setAttribute('aria-expanded', (phase === 'setup'));
+      this.invokerNode.setAttribute('aria-expanded', phase === 'setup');
     }
   }
 

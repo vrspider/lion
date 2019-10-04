@@ -32,20 +32,22 @@ const accounts = [
       bankIcon: IngLogo,
     },
     checked: false,
-  }
-]
+  },
+];
 
 const basicTemplate = html`
   <ing-select-account
     name="foo"
     .contentTemplate="${() => html`
       <ing-options>
-        ${accounts.map(account => html`
-          <ing-option-account .modelValue=${account}></ing-option-account>
-        `)}
+        ${accounts.map(
+          account => html`
+            <ing-option-account .modelValue=${account}></ing-option-account>
+          `,
+        )}
       </ing-options>
     `}"
-    >
+  >
   </ing-select-account>
 `;
 
@@ -56,7 +58,7 @@ afterEach(() => {
   mockedViewport.reset();
 });
 
-describe.only('ing-select-account', () => {
+describe('ing-select-account', () => {
   it('is an instance of LionRichSelect', async () => {
     const el = await fixture(basicTemplate);
 
@@ -157,19 +159,18 @@ describe.only('ing-select-account', () => {
     it('formats the IBAN number', async () => {
       const el = await fixture(basicTemplate);
 
-      const ibanEl = el.shadowRoot.querySelector('.option-account__iban')
+      const ibanEl = el.shadowRoot.querySelector('.option-account__iban');
       expect(ibanEl).dom.equal('DE89370400440532013000'); // but then fromatted
     });
 
     it('formats the amount', async () => {
       const el = await fixture(basicTemplate);
-      const amountEl = el.shadowRoot.querySelector('.option-account__amount')
+      const amountEl = el.shadowRoot.querySelector('.option-account__amount');
       expect(amountEl).dom.equal(formatAmountHtml(accounts[0].amount).outerHTML); // but then fromatted
     });
 
     describe('Accessibility', () => {
       // All of this should be covered in lion-option?
     });
-
   });
 });

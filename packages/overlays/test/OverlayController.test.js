@@ -21,8 +21,7 @@ const withDefaultLocalConfig = () => ({
   `),
 });
 
-describe.only('OverlayController', () => {
-
+describe('OverlayController', () => {
   describe('Init', () => {
     // adds OverlayController instance to OverlayManager
     // prepares renderTarget
@@ -48,8 +47,9 @@ describe.only('OverlayController', () => {
   });
 
   describe('Feature Configuration', () => {
+    // FIXME: Broken tests because activeElement is body. Weird, because the demos work just fine.
     describe.skip('trapsKeyboardFocus', () => {
-      it.skip('focuses the overlay on show', async () => {
+      it('focuses the overlay on show', async () => {
         const ctrl = new OverlayController({
           ...withDefaultGlobalConfig(),
           trapsKeyboardFocus: true,
@@ -59,9 +59,9 @@ describe.only('OverlayController', () => {
         expect(ctrl.contentNode).to.equal(document.activeElement);
       });
 
-      it.skip('keeps focus within the overlay e.g. you can not tab out by accident', async () => {
+      it('keeps focus within the overlay e.g. you can not tab out by accident', async () => {
         const contentNode = await fixture(html`
-          <div><input id="input1"><input id="input2"></div>
+          <div><input id="input1" /><input id="input2" /></div>
         `);
         const ctrl = new OverlayController({
           ...withDefaultGlobalConfig(),
@@ -85,9 +85,9 @@ describe.only('OverlayController', () => {
         expect(input1).to.equal(document.activeElement);
       });
 
-      it.skip('allows to move the focus outside of the overlay if trapsKeyboardFocus is disabled', async () => {
+      it('allows to move the focus outside of the overlay if trapsKeyboardFocus is disabled', async () => {
         const contentNode = await fixture(html`
-          <div><input></div>
+          <div><input /></div>
         `);
 
         const ctrl = new OverlayController({
@@ -102,7 +102,7 @@ describe.only('OverlayController', () => {
         await ctrl.show();
 
         const elOutside = await fixture(html`
-          <input>
+          <input />
         `);
         const input = ctrl.contentNode.querySelector('input');
 
@@ -144,7 +144,7 @@ describe.only('OverlayController', () => {
             placement: 'top-left',
           },
           contentNode: renderToNode(html`
-            <div><input>=</div>
+            <div><input />=</div>
           `),
         });
 
@@ -240,7 +240,6 @@ describe.only('OverlayController', () => {
         await ctrl.sync({ isShown: false });
         expect(document.activeElement).to.equal(input);
       });
-
     });
 
     describe('preventsScroll', () => {
@@ -396,9 +395,7 @@ describe.only('OverlayController', () => {
 
   describe('Update Configuration', () => {
     // reinitializes content (cleanup etc)
-
     // handles switching placementMode
-
     // respects the inital config provided to new OverlayController(initialConfig)
   });
 
@@ -445,10 +442,12 @@ describe.only('OverlayController', () => {
       expect(ctrl.invokerNode.getAttribute('aria-controls')).to.contain(ctrl.contentNode.id);
     });
 
-    it.skip('adds [role=dialog] on content', async () => {
+    it('adds [role=dialog] on content', async () => {
+      const invokerNode = await fixture('<div role="button">invoker</div>');
       const ctrl = new OverlayController({
         ...withDefaultLocalConfig(),
         handlesAccessibility: true,
+        invokerNode,
       });
       expect(ctrl.contentNode.getAttribute('role')).to.equal('dialog');
     });
@@ -466,14 +465,15 @@ describe.only('OverlayController', () => {
       });
 
       it('adds [role=tooltip] on content', async () => {
+        const invokerNode = await fixture('<div role="button">invoker</div>');
         const ctrl = new OverlayController({
           ...withDefaultLocalConfig(),
           handlesAccessibility: true,
           isTooltip: true,
+          invokerNode,
         });
         expect(ctrl.contentNode.getAttribute('role')).to.equal('tooltip');
       });
-
     });
 
     // test tooltip functionality: describedby (only local!) and role=tooltip

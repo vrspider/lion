@@ -14,13 +14,13 @@ import { DatepickerInputObject } from '../test-helpers.js';
 import { LionInputDatepicker } from '../src/LionInputDatepicker.js';
 import '../lion-input-datepicker.js';
 
-describe('<lion-input-datepicker>', () => {
+describe.only('<lion-input-datepicker>', () => {
   beforeEach(() => {
-    localizeTearDown();
+    // localizeTearDown();
   });
 
   describe('Calendar Overlay', () => {
-    it('implements calendar-overlay Style component', async () => {
+    it.only('implements calendar-overlay Style component', async () => {
       const el = await fixture(html`
         <lion-input-datepicker></lion-input-datepicker>
       `);
