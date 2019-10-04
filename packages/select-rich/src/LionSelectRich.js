@@ -22,7 +22,7 @@ function detectInteractionMode() {
 /**
  * LionSelectRich: wraps the <lion-listbox> element
  *
- * @customElement
+ * @customElement lion-select-rich
  * @extends LionField
  */
 export class LionSelectRich extends FormRegistrarMixin(
@@ -150,6 +150,9 @@ export class LionSelectRich extends FormRegistrarMixin(
     this.__setupOverlay();
     this.__setupInvokerNode();
     this.__setupListboxNode();
+
+    this._listboxNode._initRegistrarPortal({ registrationTarget: this });
+    this._invokerNode.selectedElement = this.formElements[this.checkedIndex];
   }
 
   disconnectedCallback() {

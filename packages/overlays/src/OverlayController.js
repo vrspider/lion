@@ -130,7 +130,8 @@ export class OverlayController extends EventTarget {
     if (this._renderTarget !== this._contentNodeWrapper.parentNode) {
       if (this._renderTarget) {
         this._renderTarget.appendChild(this._contentNodeWrapper);
-      } else if (this.invokerNode) {
+      }
+      else if (this.invokerNode) {
         // When a local overlay is not connected to dom yet (no .__originalContentParent found)
         this.invokerNode.parentNode.insertBefore(
           this._contentNodeWrapper,
@@ -325,7 +326,8 @@ export class OverlayController extends EventTarget {
       if (animation === true) {
         this.backdropNode.classList.add('global-overlays__backdrop--fade-in');
       }
-    } else if (phase === 'teardown') {
+    }
+    else if (phase === 'teardown') {
       const { backdropNode } = this;
       if (!backdropNode) {
         return;
@@ -482,8 +484,7 @@ export class OverlayController extends EventTarget {
       this._popper.destroy();
       this._popper = null;
     }
-    const mod = await this.constructor.popperModule;
-    const Popper = mod.default;
+    const { default: Popper } = await this.constructor.popperModule;
     this._popper = new Popper(this.invokerNode, this._contentNodeWrapper, {
       ...this.popperConfig,
     });

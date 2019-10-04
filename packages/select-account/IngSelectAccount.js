@@ -1,6 +1,6 @@
 import { css } from '@lion/core';
 import { OverlayController, withBottomSheetConfig, withModalDialogConfig } from '@lion/overlays';
-import { LionSelectRich } from '@lion/select-rich/index.js';
+import { LionSelectRich } from '@lion/select-rich';
 // import { IngFieldMixin } from '../field-mixin/IngFieldMixin.js';
 import './ing-select-account-invoker.js';
 
@@ -56,18 +56,5 @@ export class IngSelectAccount extends LionSelectRich {
     });
 
     return ctrl;
-  }
-
-  connectedCallback() {
-    // this._listboxNode.registrationTarget = this;
-
-    if (super.connectedCallback) {
-      super.connectedCallback();
-    }
-
-    this._listboxNode._initRegistrarPortal({ registrationTarget: this });
-
-    this._invokerNode.selectedElement = this.formElements[this.checkedIndex];
-
   }
 }
