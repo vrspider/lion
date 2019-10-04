@@ -1,4 +1,4 @@
-import { expect, fixture, defineCE } from '@open-wc/testing';
+import { expect, fixture, defineCE, aTimeout } from '@open-wc/testing';
 import sinon from 'sinon';
 import { localizeTearDown } from '@lion/localize/test-helpers.js';
 import { html, LitElement } from '@lion/core';
@@ -19,7 +19,7 @@ describe('<lion-input-datepicker>', () => {
     localizeTearDown();
   });
 
-  describe('Calendar Overlay', () => {
+  describe.only('Calendar Overlay', () => {
     it('implements calendar-overlay Style component', async () => {
       const el = await fixture(html`
         <lion-input-datepicker></lion-input-datepicker>
@@ -63,6 +63,7 @@ describe('<lion-input-datepicker>', () => {
       `);
       const elObj = new DatepickerInputObject(el);
       await elObj.openCalendar();
+      await aTimeout(100);
       expect(
         elObj.overlayHeadingEl.querySelector('slot[name="heading"]').assignedNodes()[0],
       ).lightDom.to.equal('Pick your date');

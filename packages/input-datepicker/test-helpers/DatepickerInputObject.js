@@ -40,6 +40,7 @@ export class DatepickerInputObject {
   }
 
   get overlayEl() {
+    console.log('this.el._overlayCtrl', this.el._overlayCtrl.contentNode.outerHTML);
     return this.el._overlayCtrl.contentNode;
   }
 

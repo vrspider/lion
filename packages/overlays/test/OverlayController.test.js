@@ -21,7 +21,7 @@ const withDefaultLocalConfig = () => ({
   `),
 });
 
-describe.only('OverlayController', () => {
+describe('OverlayController', () => {
 
   describe('Init', () => {
     // adds OverlayController instance to OverlayManager

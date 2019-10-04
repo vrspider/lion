@@ -1,4 +1,5 @@
-import { html, ifDefined, renderToNode } from '@lion/core';
+import { html, ifDefined, renderAsNode } from '@lion/core';
+import { render as renderShady } from 'lit-html/lib/shady-render.js';
 import { LionInputDate } from '@lion/input-date';
 import {
   OverlayController,
@@ -8,12 +9,14 @@ import {
 import { Unparseable, isValidatorApplied } from '@lion/validate';
 import '@lion/calendar/lion-calendar.js';
 import './lion-calendar-overlay-frame.js';
+import { OverlayInterfaceMixin } from './OverlayInterfaceMixin.js';
+
 
 /**
  * @customElement lion-input-datepicker
  * @extends {LionInputDate}
  */
-export class LionInputDatepicker extends LionInputDate {
+export class LionInputDatepicker extends OverlayInterfaceMixin(LionInputDate) {
   static get properties() {
     return {
       /**
@@ -50,7 +53,7 @@ export class LionInputDatepicker extends LionInputDate {
   get slots() {
     return {
       ...super.slots,
-      [this._calendarInvokerSlot]: () => renderToNode(this._invokerTemplate()),
+      [this._calendarInvokerSlot]: () => renderAsNode(this._invokerTemplate()),
     };
   }
 
@@ -141,12 +144,8 @@ export class LionInputDatepicker extends LionInputDate {
     return this.querySelector(`#${this.__invokerId}`);
   }
 
-  get _calendarOverlayElement() {
-    return this.__calendarOverlayNode;
-  }
-
   get _calendarElement() {
-    return this._calendarOverlayElement.querySelector('#calendar');
+    return this._overlayCtrl.contentNode.querySelector('#calendar');
   }
 
   constructor() {
@@ -185,7 +184,7 @@ export class LionInputDatepicker extends LionInputDate {
 
   firstUpdated(c) {
     super.firstUpdated(c);
-    this.__createPicker();
+    this.__createOverlay();
     this.__toggleInvokerDisabled();
   }
 
@@ -205,9 +204,9 @@ export class LionInputDatepicker extends LionInputDate {
     }
   }
 
-  _calendarOverlayTemplate() {
+  _overlayTemplate() {
     return html`
-      <lion-calendar-overlay-frame>
+      <lion-calendar-overlay-frame @dialog-close=${() => this._overlayCtrl.hide()}>
         <span slot="heading">${this.calendarHeading}</span>
         ${this._calendarTemplate()}
       </lion-calendar-overlay-frame>
@@ -245,23 +244,12 @@ export class LionInputDatepicker extends LionInputDate {
         type="button"
         @click="${this.__openCalendarOverlay}"
         id="${this.__invokerId}"
-        aria-haspopup="dialog"
-        aria-expanded="false"
         aria-label="${this.msgLit('lion-input-datepicker:openDatepickerLabel')}"
         title="${this.msgLit('lion-input-datepicker:openDatepickerLabel')}"
       >
         📅
       </button>
     `;
-  }
-
-  __createPicker() {
-    this.__calendarOverlayNode = renderToNode(this._calendarOverlayTemplate());
-    document.body.appendChild(this.__calendarOverlayNode);
-
-    const contentNode = renderToNode(this.__calendarOverlayNode);
-    const invokerNode = this._invokerElement;
-    this._overlayCtrl = this._defineOverlay({ contentNode, invokerNode });
   }
 
   /**
@@ -271,9 +259,11 @@ export class LionInputDatepicker extends LionInputDate {
   // eslint-disable-next-line class-methods-use-this
   _defineOverlay({ contentNode, invokerNode }) {
     const ctrl = new OverlayController({
-      placementMode: 'local',
+      ...withDropdownConfig(),
       contentNode,
+      invokerNode,
       elementToFocusAfterHide: invokerNode,
+      hidesOnEsc: true,
     });
 
     ctrl.addEventListener('before-show', () => {
@@ -290,7 +280,7 @@ export class LionInputDatepicker extends LionInputDate {
   async __openCalendarOverlay() {
     this._overlayCtrl.show();
     await Promise.all([
-      this._calendarOverlayElement.updateComplete,
+      this._overlayCtrl.contentNode.updateComplete,
       this._calendarElement.updateComplete,
     ]);
     this._onCalendarOverlayOpened();

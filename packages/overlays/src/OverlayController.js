@@ -203,27 +203,6 @@ export class OverlayController extends EventTarget {
     this.dispatchEvent(new Event('show'));
   }
 
-  async _handlePosition({ phase = 'setup' } = {}) {
-    if (this.placementMode === 'global') {
-      const addOrRemove = (phase === 'setup') ? 'add' : 'remove';
-      const placementClass = `${GLOBAL_OVERLAYS_CONTAINER_CLASS}--${this.viewportConfig.placement}`;
-      this._contentNodeWrapper.classList[addOrRemove](GLOBAL_OVERLAYS_CONTAINER_CLASS);
-      this._contentNodeWrapper.classList[addOrRemove](placementClass);
-      this.contentNode.classList[addOrRemove](GLOBAL_OVERLAYS_CLASS);
-    }
-    else if (this.placementMode === 'local' && phase === 'setup') {
-      /**
-       * Popper is weird about properly positioning the popper element when it is recreated so
-       * we just recreate the popper instance to make it behave like it should.
-       * Probably related to this issue: https://github.com/FezVrasta/popper.js/issues/796
-       * calling just the .update() function on the popper instance sadly does not resolve this.
-       * This is however necessary for initial placement.
-       */
-      await this.__createPopperInstance();
-      this._popper.update();
-    }
-  }
-
   /**
    * @event before-hide right before the overlay hides. Used for animations and switching overlays
    * @event hide right after the overlay is hidden
@@ -241,13 +220,15 @@ export class OverlayController extends EventTarget {
   }
 
   _restoreFocus() {
+    // We only are allowed to move focus if we (still) 'own' it.
+    // Otherwise we assume the 'outside world' has, purposefully, taken over
     if (this._contentNodeWrapper.activeElement) {
       this.elementToFocusAfterHide.focus();
     }
   }
 
-  toggle() {
-    this.isShown ? this.hide() : this.show(); // eslint-disable-line
+  async toggle() {
+    return (this.isShown) ? this.hide() : this.show(); // eslint-disable-line
   }
 
   /**
@@ -256,7 +237,7 @@ export class OverlayController extends EventTarget {
    * @param {object} config
    * @param {'setup'|'teardown'} config.phase
    */
-  _handleFeatures({ phase = 'setup' } = {}) {
+  _handleFeatures({ phase }) {
     this._handlePosition({ phase });
     if (this.preventsScroll) {
       this._handlePreventsScroll({ phase });
@@ -281,7 +262,28 @@ export class OverlayController extends EventTarget {
     }
   }
 
-  _handlePreventsScroll({ phase = 'setup' } = {}) { // eslint-disable-line class-methods-use-this
+  async _handlePosition({ phase }) {
+    if (this.placementMode === 'global') {
+      const addOrRemove = (phase === 'setup') ? 'add' : 'remove';
+      const placementClass = `${GLOBAL_OVERLAYS_CONTAINER_CLASS}--${this.viewportConfig.placement}`;
+      this._contentNodeWrapper.classList[addOrRemove](GLOBAL_OVERLAYS_CONTAINER_CLASS);
+      this._contentNodeWrapper.classList[addOrRemove](placementClass);
+      this.contentNode.classList[addOrRemove](GLOBAL_OVERLAYS_CLASS);
+    }
+    else if (this.placementMode === 'local' && phase === 'setup') {
+      /**
+       * Popper is weird about properly positioning the popper element when it is recreated so
+       * we just recreate the popper instance to make it behave like it should.
+       * Probably related to this issue: https://github.com/FezVrasta/popper.js/issues/796
+       * calling just the .update() function on the popper instance sadly does not resolve this.
+       * This is however necessary for initial placement.
+       */
+      await this.__createPopperInstance();
+      this._popper.update();
+    }
+  }
+
+  _handlePreventsScroll({ phase }) { // eslint-disable-line class-methods-use-this
     const addOrRemove = (phase === 'setup') ? 'add' : 'remove';
     document.body.classList[addOrRemove]('global-overlays-scroll-lock');
     if (isIOS) {
@@ -291,7 +293,7 @@ export class OverlayController extends EventTarget {
     }
   }
 
-  _handleBlocking({ phase = 'setup' } = {}) {
+  _handleBlocking({ phase }) {
     const addOrRemove = (phase === 'setup') ? 'add' : 'remove';
     this._contentNodeWrapper.classList[addOrRemove]('global-overlays__overlay--blocking');
     if (this.backdropNode) {
@@ -313,11 +315,11 @@ export class OverlayController extends EventTarget {
   }
 
   /**
-   * Sets up backdrop on the given overlay. If there was a backdrop on another element
+   * @desc Sets up backdrop on the given overlay. If there was a backdrop on another element
    * it is removed. Otherwise this is the first time displaying a backdrop, so a fade-in
    * animation is played.
    */
-  _handleBackdrop({ animation = true, renderTarget, phase = setup } = {}) {
+  _handleBackdrop({ animation = true, renderTarget, phase }) {
     if (phase === 'setup') {
       this.backdropNode = document.createElement('div');
       this.backdropNode.classList.add('global-overlays__backdrop');
@@ -346,7 +348,7 @@ export class OverlayController extends EventTarget {
     }
   }
 
-  _handleTrapsKeyboardFocus({ phase = 'setup', findNewTrap = true } = {}) {
+  _handleTrapsKeyboardFocus({ phase, findNewTrap = true }) {
     if (phase === 'setup') {
       if (this.manager) {
         this.manager.disableTrapsKeyboardFocusForAll();
@@ -369,7 +371,7 @@ export class OverlayController extends EventTarget {
     }
   }
 
-  _handleHidesOnEsc({ phase = 'setup' } = {}) {
+  _handleHidesOnEsc({ phase }) {
     if (phase === 'setup') {
       this.__escKeyHandler = ev => ev.key === 'Escape' && this.hide();
       this._contentNodeWrapper.addEventListener('keyup', this.__escKeyHandler);
@@ -393,7 +395,7 @@ export class OverlayController extends EventTarget {
     }
   }
 
-  _handleHidesOnOutsideClick({ phase = 'setup' } = {}) {
+  _handleHidesOnOutsideClick({ phase }) {
     const addOrRemoveListener = (phase === 'setup') ? 'addEventListener' : 'removeEventListener';
 
     if (phase === 'setup') {
@@ -420,7 +422,7 @@ export class OverlayController extends EventTarget {
     document.documentElement[addOrRemoveListener]('click', this.__onCaptureHtmlClick, true);
   }
 
-  _handleAccessibility({ phase = 'setup' } = {}) {
+  _handleAccessibility({ phase }) {
     if (!this.isTooltip) {
       this.invokerNode.setAttribute('aria-expanded', (phase === 'setup'));
     }
