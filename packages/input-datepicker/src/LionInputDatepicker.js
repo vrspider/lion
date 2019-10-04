@@ -1,6 +1,10 @@
-import { html, render, ifDefined } from '@lion/core';
+import { html, ifDefined, renderToNode } from '@lion/core';
 import { LionInputDate } from '@lion/input-date';
-import { overlays, ModalDialogController } from '@lion/overlays';
+import {
+  OverlayController,
+  withModalDialogConfig,
+  withDropdownConfig,
+} from '@lion/overlays';
 import { Unparseable, isValidatorApplied } from '@lion/validate';
 import '@lion/calendar/lion-calendar.js';
 import './lion-calendar-overlay-frame.js';
@@ -46,7 +50,7 @@ export class LionInputDatepicker extends LionInputDate {
   get slots() {
     return {
       ...super.slots,
-      [this._calendarInvokerSlot]: () => this.__createPickerAndReturnInvokerNode(),
+      [this._calendarInvokerSlot]: () => renderToNode(this._invokerTemplate()),
     };
   }
 
@@ -138,7 +142,7 @@ export class LionInputDatepicker extends LionInputDate {
   }
 
   get _calendarOverlayElement() {
-    return this._overlayCtrl.contentNode;
+    return this.__calendarOverlayNode;
   }
 
   get _calendarElement() {
@@ -181,6 +185,7 @@ export class LionInputDatepicker extends LionInputDate {
 
   firstUpdated(c) {
     super.firstUpdated(c);
+    this.__createPicker();
     this.__toggleInvokerDisabled();
   }
 
@@ -202,7 +207,7 @@ export class LionInputDatepicker extends LionInputDate {
 
   _calendarOverlayTemplate() {
     return html`
-      <lion-calendar-overlay-frame @dialog-close=${() => this._overlayCtrl.hide()}>
+      <lion-calendar-overlay-frame>
         <span slot="heading">${this.calendarHeading}</span>
         ${this._calendarTemplate()}
       </lion-calendar-overlay-frame>
@@ -250,21 +255,36 @@ export class LionInputDatepicker extends LionInputDate {
     `;
   }
 
-  __createPickerAndReturnInvokerNode() {
-    const renderParent = document.createElement('div');
-    render(this._invokerTemplate(), renderParent);
-    const invokerNode = renderParent.firstElementChild;
+  __createPicker() {
+    this.__calendarOverlayNode = renderToNode(this._calendarOverlayTemplate());
+    document.body.appendChild(this.__calendarOverlayNode);
 
-    // TODO: ModalDialogController could be replaced by a more flexible
-    // overlay, allowing the overlay to switch on smaller screens, for instance from dropdown to
-    // bottom sheet via DynamicOverlayController
-    this._overlayCtrl = overlays.add(
-      new ModalDialogController({
-        contentTemplate: () => this._calendarOverlayTemplate(),
-        elementToFocusAfterHide: invokerNode,
-      }),
-    );
-    return invokerNode;
+    const contentNode = renderToNode(this.__calendarOverlayNode);
+    const invokerNode = this._invokerElement;
+    this._overlayCtrl = this._defineOverlay({ contentNode, invokerNode });
+  }
+
+  /**
+   * @desc returns an instance of a (dynamic) overlay controller
+   * @returns {OverlayController}
+   */
+  // eslint-disable-next-line class-methods-use-this
+  _defineOverlay({ contentNode, invokerNode }) {
+    const ctrl = new OverlayController({
+      placementMode: 'local',
+      contentNode,
+      elementToFocusAfterHide: invokerNode,
+    });
+
+    ctrl.addEventListener('before-show', () => {
+      if (window.innerWidth >= 600) {
+        ctrl.updateConfig(withDropdownConfig());
+      } else {
+        ctrl.updateConfig(withModalDialogConfig());
+      }
+    });
+
+    return ctrl;
   }
 
   async __openCalendarOverlay() {

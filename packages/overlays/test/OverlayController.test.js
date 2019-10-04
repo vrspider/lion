@@ -297,7 +297,6 @@ describe.only('OverlayController', () => {
         await ctrl.show();
         expect(ctrl.backdropNode).to.have.class('global-overlays__backdrop');
       });
-
     });
   });
 
@@ -408,17 +407,74 @@ describe.only('OverlayController', () => {
       const invokerNode = await fixture('<div role="button">invoker</div>');
       const ctrl = new OverlayController({
         ...withDefaultLocalConfig(),
+        handlesAccessibility: true,
         invokerNode,
       });
-      expect(ctrl.invokerNode.getAttribute('aria-controls')).to.contain(ctrl.content.id);
-      expect(ctrl.invokerNode).to.have.attribute('aria-expanded', 'false');
+      expect(ctrl.invokerNode.getAttribute('aria-expanded')).to.equal('false');
       await ctrl.show();
-      expect(ctrl.invokerNode).to.have.attribute('aria-expanded', 'true');
+      expect(ctrl.invokerNode.getAttribute('aria-expanded')).to.equal('true');
       await ctrl.hide();
-      expect(ctrl.invokerNode).to.have.attribute('aria-expanded', 'false');
+      expect(ctrl.invokerNode.getAttribute('aria-expanded')).to.equal('false');
     });
 
-    // test aria-controls, role dialog
+    it('creates unique id for content', async () => {
+      const ctrl = new OverlayController({
+        ...withDefaultLocalConfig(),
+        handlesAccessibility: true,
+      });
+      expect(ctrl.contentNode.id).to.contain(ctrl._contentId);
+    });
+
+    it('preserves content id when present', async () => {
+      const contentNode = await fixture('<div id="preserved">content</div>');
+      const ctrl = new OverlayController({
+        ...withDefaultLocalConfig(),
+        handlesAccessibility: true,
+        contentNode,
+      });
+      expect(ctrl.contentNode.id).to.contain('preserved');
+    });
+
+    it('adds [aria-controls] on invoker', async () => {
+      const invokerNode = await fixture('<div role="button">invoker</div>');
+      const ctrl = new OverlayController({
+        ...withDefaultLocalConfig(),
+        handlesAccessibility: true,
+        invokerNode,
+      });
+      expect(ctrl.invokerNode.getAttribute('aria-controls')).to.contain(ctrl.contentNode.id);
+    });
+
+    it.skip('adds [role=dialog] on content', async () => {
+      const ctrl = new OverlayController({
+        ...withDefaultLocalConfig(),
+        handlesAccessibility: true,
+      });
+      expect(ctrl.contentNode.getAttribute('role')).to.equal('dialog');
+    });
+
+    describe('Tooltip', () => {
+      it('adds [aria-describedby] on invoker', async () => {
+        const invokerNode = await fixture('<div role="button">invoker</div>');
+        const ctrl = new OverlayController({
+          ...withDefaultLocalConfig(),
+          handlesAccessibility: true,
+          isTooltip: true,
+          invokerNode,
+        });
+        expect(ctrl.invokerNode.getAttribute('aria-describedby')).to.equal(ctrl._contentId);
+      });
+
+      it('adds [role=tooltip] on content', async () => {
+        const ctrl = new OverlayController({
+          ...withDefaultLocalConfig(),
+          handlesAccessibility: true,
+          isTooltip: true,
+        });
+        expect(ctrl.contentNode.getAttribute('role')).to.equal('tooltip');
+      });
+
+    });
 
     // test tooltip functionality: describedby (only local!) and role=tooltip
   });
