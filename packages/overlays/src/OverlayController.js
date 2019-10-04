@@ -210,7 +210,7 @@ export class OverlayController extends EventTarget {
       this._contentNodeWrapper.classList[addOrRemove](placementClass);
       this.contentNode.classList[addOrRemove](GLOBAL_OVERLAYS_CLASS);
     }
-    else if (this.placementMode === 'local') {
+    else if (this.placementMode === 'local' && phase === 'setup') {
       /**
        * Popper is weird about properly positioning the popper element when it is recreated so
        * we just recreate the popper instance to make it behave like it should.
