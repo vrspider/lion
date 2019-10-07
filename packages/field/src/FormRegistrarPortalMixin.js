@@ -27,11 +27,12 @@ export const FormRegistrarPortalMixin = dedupeMixin(
         });
       }
 
-      _initRegistrarPortal({ registrationTarget }) {
-        this.registrationTarget = registrationTarget;
+      connectedCallback() {
+        if (super.connectedCallback) {
+          super.connectedCallback();
+        }
 
         this.__checkRegistrationTarget();
-
         formRegistrarManager.add(this);
 
         this.__redispatchEventForFormRegistrarPortalMixin = ev => {

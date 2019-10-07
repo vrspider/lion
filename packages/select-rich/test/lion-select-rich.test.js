@@ -93,7 +93,7 @@ describe('lion-select-rich', () => {
           <lion-options slot="input"></lion-options>
         </lion-select-rich>
       `);
-      el.opened = true;
+      await el._overlayCtrl.show();
       await el.updateComplete;
       expect(document.activeElement === el._listboxNode).to.be.true;
       expect(document.activeElement === el._invokerNode).to.be.false;
@@ -113,7 +113,7 @@ describe('lion-select-rich', () => {
           </lion-options>
         </lion-select-rich>
       `);
-      el.opened = true;
+      await el._overlayCtrl.show();
       await el.updateComplete;
       const options = Array.from(el.querySelectorAll('lion-option'));
 

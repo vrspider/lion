@@ -142,6 +142,7 @@ export class LionSelectRich extends OverlayInterfaceMixin(FormRegistrarMixin(
   }
 
   connectedCallback() {
+    this._listboxNode.registrationTarget = this;
     if (super.connectedCallback) {
       super.connectedCallback();
     }
@@ -150,7 +151,6 @@ export class LionSelectRich extends OverlayInterfaceMixin(FormRegistrarMixin(
     this.__setupInvokerNode();
     this.__setupListboxNode();
 
-    this._listboxNode._initRegistrarPortal({ registrationTarget: this });
     this._invokerNode.selectedElement = this.formElements[this.checkedIndex];
   }
 
@@ -451,8 +451,6 @@ export class LionSelectRich extends OverlayInterfaceMixin(FormRegistrarMixin(
   }
 
   __onKeyUp(ev) {
-    console.log('keyup', this.disabled, this.opened);
-
     if (this.disabled) {
       return;
     }
@@ -465,7 +463,6 @@ export class LionSelectRich extends OverlayInterfaceMixin(FormRegistrarMixin(
     switch (key) {
       case 'ArrowUp':
         ev.preventDefault();
-        console.log('opened arrow');
 
         if (this.interactionMode === 'mac') {
           this.opened = true;

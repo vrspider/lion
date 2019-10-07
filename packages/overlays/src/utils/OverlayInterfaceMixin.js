@@ -18,7 +18,6 @@ superclass => class OverlayInterfaceMixin extends superclass {
   }
 
   get opened() {
-    console.log('this._overlayCtrl.isShown', this._overlayCtrl.isShown);
     return this._overlayCtrl.isShown;
   }
 
