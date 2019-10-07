@@ -58,7 +58,6 @@ describe('OverlayController', () => {
     });
 
     describe('Render target', () => {
-
       it('creates global target for placement mode "global"', async () => {
         const ctrl = new OverlayController({
           ...withGlobalTestConfig(),
@@ -102,7 +101,7 @@ describe('OverlayController', () => {
       expect(ctrl.contentNode).to.have.trimmed.text('direct node');
     });
 
-    it('accepts an .invokerNode<Node> to directly set content', async () => {
+    it('accepts an .invokerNode<Node> to directly set invoker', async () => {
       const ctrl = new OverlayController({
         ...withGlobalTestConfig(),
         invokerNode: await fixture('<button>invoke</button>'),

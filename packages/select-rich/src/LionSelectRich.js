@@ -246,7 +246,6 @@ export class LionSelectRich extends OverlayMixin(FormRegistrarMixin(
    * @param {*} child
    */
   addFormElement(child) {
-    console.log('addFormElement', child);
     super.addFormElement(child);
     // we need to adjust the elements being registered
     /* eslint-disable no-param-reassign */
@@ -390,8 +389,6 @@ export class LionSelectRich extends OverlayMixin(FormRegistrarMixin(
    * @param ev - the keydown event object
    */
   __listboxOnKeyUp(ev) {
-    console.log('vroem');
-
     if (this.disabled) {
       return;
     }
@@ -420,7 +417,6 @@ export class LionSelectRich extends OverlayMixin(FormRegistrarMixin(
         this.activeIndex = this.__getNextEnabledOption(this.activeIndex);
         break;
       case 'Home':
-        console.log('[hoem]');
         ev.preventDefault();
         this.activeIndex = this.__getNextEnabledOption(0, 0);
         break;
