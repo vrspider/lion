@@ -217,9 +217,9 @@ export class OverlayController extends EventTarget {
    * @param {HTMLElement} elementToFocusAfterHide
    */
   async show(elementToFocusAfterHide = this.elementToFocusAfterHide) {
-    if (this.manager) {
-      this.manager.show(this);
-    }
+    // if (this.manager) {
+    //   this.manager.show(this);
+    // }
     if (this.isShown) {
       return;
     }
