@@ -17,11 +17,12 @@ module.exports = config => {
         },
       ],
 
-      // frameworks: ['viewport'],
 
       esm: {
         nodeResolve: true,
       },
+
+      // frameworks: ['viewport'],
 
       // TODO: improve coverage
       coverageIstanbulReporter: {

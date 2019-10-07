@@ -6,7 +6,7 @@ import { OverlayController } from '../src/OverlayController.js';
 import { normalizeTransformStyle } from '../test-helpers/local-positioning-helpers.js';
 
 // karma-viewport plugin exposes global viewport variable
-const mockedViewport = window.viewport;
+// const mockedViewport = window.viewport;
 
 const withDefaultLocalConfig = () => ({
   placementMode: 'local',
@@ -19,13 +19,13 @@ const withDefaultLocalConfig = () => ({
 });
 
 describe('Local Positioning', () => {
-  beforeEach(() => {
-    mockedViewport.set(300, 300);
-  });
+  // beforeEach(() => {
+  //   mockedViewport.set(300, 300);
+  // });
 
-  afterEach(() => {
-    mockedViewport.reset();
-  });
+  // afterEach(() => {
+  //   mockedViewport.reset();
+  // });
 
   describe('Nodes', () => {
 
