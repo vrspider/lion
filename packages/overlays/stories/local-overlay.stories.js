@@ -1,6 +1,6 @@
 import { storiesOf, html } from '@open-wc/demoing-storybook';
-import { css } from '@lion/core';
-import { overlays, LocalOverlayController } from '../index.js';
+import { css, renderAsNode } from '@lion/core';
+import { overlays, LocalOverlayController, OverlayController } from '../index.js';
 
 const popupDemoStyle = css`
   .demo-box {
@@ -16,7 +16,7 @@ const popupDemoStyle = css`
   .demo-popup {
     display: block;
     max-width: 250px;
-    position: absolute;
+    /* position: absolute; */
     background-color: white;
     border-radius: 2px;
     box-shadow: 0 0 6px 0 rgba(0, 0, 0, 0.12), 0 6px 6px 0 rgba(0, 0, 0, 0.24);
@@ -56,19 +56,32 @@ storiesOf('Local Overlay System|Local Overlay', module)
     invokerNode.innerHTML = 'UK';
     invokerNode.addEventListener('click', () => popup.toggle());
 
-    popup = overlays.add(
-      new LocalOverlayController({
-        hidesOnEsc: true,
-        hidesOnOutsideClick: true,
-        popperConfig: {
-          placement: 'top-end',
-        },
-        contentTemplate: () => html`
-          <div class="demo-popup">United Kingdom</div>
-        `,
-        invokerNode,
-      }),
-    );
+    popup = new OverlayController({
+      placementMode: 'local',
+      hidesOnEsc: true,
+      hidesOnOutsideClick: true,
+      popperConfig: {
+        placement: 'top-left',
+      },
+      contentNode: renderAsNode(html`
+        <div class="demo-popup">United Kingdom</div>
+      `),
+      invokerNode,
+    });
+
+    // popup = overlays.add(
+    //   new LocalOverlayController({
+    //     hidesOnEsc: true,
+    //     hidesOnOutsideClick: true,
+    //     popperConfig: {
+    //       placement: 'top-end',
+    //     },
+    //     contentTemplate: () => html`
+    //       <div class="demo-popup">United Kingdom</div>
+    //     `,
+    //     invokerNode,
+    //   }),
+    // );
     return html`
       <style>
         ${popupDemoStyle}

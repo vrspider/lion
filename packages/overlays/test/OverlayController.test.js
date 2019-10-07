@@ -8,13 +8,13 @@ import {
   unsafeStatic,
   nextFrame,
 } from '@open-wc/testing';
+import { renderAsNode } from '@lion/core';
 import '@lion/core/test-helpers/keyboardEventShimIE.js';
 import sinon from 'sinon';
 import { keyCodes } from '../src/utils/key-codes.js';
 import { simulateTab } from '../src/utils/simulate-tab.js';
 import { OverlayController } from '../src/OverlayController.js';
 import { overlays } from '../src/overlays.js';
-import { renderAsNode } from '@lion/core';
 import { getRenderedOverlay } from '../test-helpers/global-positioning-helpers.js';
 
 const withGlobalTestConfig = () => ({
@@ -38,7 +38,7 @@ afterEach(() => {
   overlays.teardown();
 });
 
-describe.only('OverlayController', () => {
+describe('OverlayController', () => {
   describe('Init', () => {
     // adds OverlayController instance to OverlayManager
     it('adds OverlayController instance to OverlayManager', async () => {
@@ -66,7 +66,7 @@ describe.only('OverlayController', () => {
         expect(ctrl._renderTarget).to.equal(overlays.globalRootNode);
       });
 
-      it('creates local target next to sibling for placement mode "local"', async () => {
+      it.skip('creates local target next to sibling for placement mode "local"', async () => {
         const ctrl = new OverlayController({
           ...withLocalTestConfig(),
           invokerNode: await fixture(html`

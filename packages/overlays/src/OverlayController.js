@@ -146,13 +146,14 @@ export class OverlayController extends EventTarget {
     if (this._renderTarget !== this._contentNodeWrapper.parentNode) {
       if (this._renderTarget) {
         this._renderTarget.appendChild(this._contentNodeWrapper);
-      } else if (this.invokerNode) {
-        // When a local overlay is not connected to dom yet (no .__originalContentParent found)
-        this.invokerNode.parentElement.insertBefore(
-          this._contentNodeWrapper,
-          this.invokerNode.nextSibling,
-        );
       }
+      // else if (this.invokerNode) {
+      //   // When a local overlay is not connected to dom yet (no .__originalContentParent found)
+      //   this.invokerNode.parentElement.insertBefore(
+      //     this._contentNodeWrapper,
+      //     this.invokerNode.nextSibling,
+      //   );
+      // }
     }
   }
 
@@ -168,14 +169,14 @@ export class OverlayController extends EventTarget {
     this._contentNodeWrapper.style.cssText = null;
     this._contentNodeWrapper.style.display = 'none';
 
-    // if (this.contentNode.slot) {
-    //   // Since we wrapped our (previously plotted as direct descendant of host) content projected
-    //   // node, we need to make sure the new direct descendant (_contentNodeWrapper) stays projected
-    //   this._contentNodeWrapper.slot = this.contentNode.slot;
-    // } else {
     // Make sure that your shadow dom contains this outlet, when we are adding to light dom
     this._contentNodeWrapper.slot = '_overlay-shadow-outlet';
-    // }
+
+    if (this.contentNode.style.position === 'absolute') {
+      // Having a _contWrapperNode and a contentNode with 'position:absolute' results in
+      // computed height of 0...
+      this.contentNode.style.position = 'static';
+    }
   }
 
   /**
@@ -217,15 +218,15 @@ export class OverlayController extends EventTarget {
    * @param {HTMLElement} elementToFocusAfterHide
    */
   async show(elementToFocusAfterHide = this.elementToFocusAfterHide) {
-    // if (this.manager) {
-    //   this.manager.show(this);
-    // }
+    if (this.manager) {
+      this.manager.show(this);
+    }
     if (this.isShown) {
       return;
     }
     this.dispatchEvent(new Event('before-show'));
     await this.transitionShow({ backdropNode: this.backdropNode, conentNode: this.contentNode });
-    this._contentNodeWrapper.style.display = '';
+    this._contentNodeWrapper.style.display = (this.placementMode === 'local') ? 'inline-block' : '';
     await this._handleFeatures({ phase: 'setup' });
     await this._handlePosition({ phase: 'setup' });
     this.elementToFocusAfterHide = elementToFocusAfterHide;

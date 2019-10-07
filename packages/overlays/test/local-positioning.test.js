@@ -2,13 +2,10 @@ import { expect, fixture, html } from '@open-wc/testing';
 import { renderAsNode } from '@lion/core';
 import Popper from 'popper.js/dist/esm/popper.min.js';
 import { OverlayController } from '../src/OverlayController.js';
-
 import { normalizeTransformStyle } from '../test-helpers/local-positioning-helpers.js';
 
-// karma-viewport plugin exposes global viewport variable
-// const mockedViewport = window.viewport;
 
-const withDefaultLocalConfig = () => ({
+const withLocalTestConfig = () => ({
   placementMode: 'local',
   contentNode: renderAsNode(html`
     <div>my content</div>
@@ -19,13 +16,6 @@ const withDefaultLocalConfig = () => ({
 });
 
 describe('Local Positioning', () => {
-  // beforeEach(() => {
-  //   mockedViewport.set(300, 300);
-  // });
-
-  // afterEach(() => {
-  //   mockedViewport.reset();
-  // });
 
   describe('Nodes', () => {
 
@@ -39,7 +29,7 @@ describe('Local Positioning', () => {
       node.innerHTML = '<div id="content">Content</div>';
 
       const ctrl = new OverlayController({
-        ...withDefaultLocalConfig(),
+        ...withLocalTestConfig(),
         contentNode: node,
         invokerNode,
       });
@@ -60,7 +50,7 @@ describe('Local Positioning', () => {
   describe('Positioning', () => {
     it('creates a Popper instance on the controller when shown, keeps it when hidden', async () => {
       const ctrl = new OverlayController({
-        ...withDefaultLocalConfig(),
+        ...withLocalTestConfig(),
       });
       await ctrl.show();
       expect(ctrl._popper).to.be.an.instanceof(Popper)
@@ -73,7 +63,7 @@ describe('Local Positioning', () => {
     it('positions correctly', async () => {
       // smoke test for integration of popper
       const ctrl = new OverlayController({
-        ...withDefaultLocalConfig(),
+        ...withLocalTestConfig(),
         contentNode: renderAsNode(html`
           <div style="width: 80px; height: 20px; margin: 0;">my content</div>
         `),
@@ -82,7 +72,7 @@ describe('Local Positioning', () => {
         `),
       });
       await fixture(html`
-        ${ctrl.invokerNode}
+        ${ctrl.invokerNode}${ctrl.content}
       `);
 
       await ctrl.show();
@@ -96,7 +86,7 @@ describe('Local Positioning', () => {
 
     it('uses top as the default placement', async () => {
       const ctrl = new OverlayController({
-        ...withDefaultLocalConfig(),
+        ...withLocalTestConfig(),
         contentNode: renderAsNode(html`
           <div style="width: 80px; height: 20px;"></div>
         `),
@@ -106,7 +96,7 @@ describe('Local Positioning', () => {
       });
       await fixture(html`
         <div style="position: fixed; left: 100px; top: 100px;">
-          ${ctrl.invokerNode} ${ctrl.contentNode}
+          ${ctrl.invokerNode}${ctrl.content}
         </div>
       `);
       await ctrl.show();
@@ -115,7 +105,7 @@ describe('Local Positioning', () => {
 
     it('positions to preferred place if placement is set and space is available', async () => {
       const ctrl = new OverlayController({
-        ...withDefaultLocalConfig(),
+        ...withLocalTestConfig(),
         contentNode: renderAsNode(html`
           <div style="width: 80px; height: 20px;"></div>
         `),
@@ -130,8 +120,8 @@ describe('Local Positioning', () => {
         },
       });
       await fixture(html`
-        <div style="position: absolute; left: 100px; top: 50px;">
-          ${ctrl.invokerNode} ${ctrl._contentNodeWrapper}
+        <div style="position: absolute; left: 120px; top: 50px;">
+          ${ctrl.invokerNode}${ctrl.content}
         </div>
       `);
 
@@ -141,7 +131,7 @@ describe('Local Positioning', () => {
 
     it('positions to different place if placement is set and no space is available', async () => {
       const ctrl = new OverlayController({
-        ...withDefaultLocalConfig(),
+        ...withLocalTestConfig(),
         contentNode: renderAsNode(html`
           <div style="width: 80px; height: 20px;"></div>
         `),
@@ -154,7 +144,7 @@ describe('Local Positioning', () => {
       });
       await fixture(`
         <div style="position: absolute; top: 0;">
-          ${ctrl.invokerNode} ${ctrl._contentNodeWrapper}
+          ${ctrl.invokerNode}${ctrl.content}
         </div>
       `);
 
@@ -164,7 +154,7 @@ describe('Local Positioning', () => {
 
     it('allows the user to override default Popper modifiers', async () => {
       const ctrl = new OverlayController({
-        ...withDefaultLocalConfig(),
+        ...withLocalTestConfig(),
         contentNode: renderAsNode(html`
           <div style="width: 80px; height: 20px;"></div>
         `),
@@ -188,7 +178,7 @@ describe('Local Positioning', () => {
       });
       await fixture(html`
         <div style="position: absolute; left: 100px; top: 50px;">
-          ${ctrl.invokerNode} ${ctrl._contentNodeWrapper}
+          ${ctrl.invokerNode}${ctrl.content}
         </div>
       `);
 
@@ -202,7 +192,7 @@ describe('Local Positioning', () => {
 
     it('positions the Popper element correctly on show', async () => {
       const ctrl = new OverlayController({
-        ...withDefaultLocalConfig(),
+        ...withLocalTestConfig(),
         contentNode: renderAsNode(html`
           <div style="width: 80px; height: 20px;"></div>
         `),
@@ -218,19 +208,19 @@ describe('Local Positioning', () => {
       });
       await fixture(html`
         <div style="position: absolute; top: 300px; left: 100px;">
-          ${ctrl.invokerNode} ${ctrl._contentNodeWrapper}
+          ${ctrl.invokerNode}${ctrl.content}
         </div>
       `);
       await ctrl.show();
       expect(normalizeTransformStyle(ctrl._contentNodeWrapper.style.transform)).to.equal(
-        'translate3d(10px, -28px, 0px)',
+        'translate3d(0px, -28px, 0px)',
         'Popper positioning values',
       );
 
       await ctrl.hide();
       await ctrl.show();
       expect(normalizeTransformStyle(ctrl._contentNodeWrapper.style.transform)).to.equal(
-        'translate3d(10px, -28px, 0px)',
+        'translate3d(0px, -28px, 0px)',
         'Popper positioning values should be identical after hiding and showing',
       );
     });
@@ -238,7 +228,7 @@ describe('Local Positioning', () => {
     // TODO: dom get's removed when hidden so no dom node to update placement
     it('updates placement properly even during hidden state', async () => {
       const ctrl = new OverlayController({
-        ...withDefaultLocalConfig(),
+        ...withLocalTestConfig(),
         contentNode: renderAsNode(html`
           <div style="width: 80px; height: 20px;"></div>
         `),
@@ -266,7 +256,7 @@ describe('Local Positioning', () => {
 
       await ctrl.show();
       expect(normalizeTransformStyle(ctrl._contentNodeWrapper.style.transform)).to.equal(
-        'translate3d(10px, -30px, 0px)',
+        'translate3d(0px, -30px, 0px)',
         'Popper positioning values',
       );
 
@@ -282,14 +272,14 @@ describe('Local Positioning', () => {
       await ctrl.show();
       expect(ctrl._popper.options.modifiers.offset.offset).to.equal('0, 20px');
       expect(normalizeTransformStyle(ctrl._contentNodeWrapper.style.transform)).to.equal(
-        'translate3d(10px, -40px, 0px)',
+        'translate3d(0px, -40px, 0px)',
         'Popper positioning Y value should be 10 less than previous, due to the added extra 10px offset',
       );
     });
 
     it('updates positioning correctly during shown state when config gets updated', async () => {
       const ctrl = new OverlayController({
-        ...withDefaultLocalConfig(),
+        ...withLocalTestConfig(),
         contentNode: renderAsNode(html`
           <div style="width: 80px; height: 20px;"></div>
         `),
@@ -316,7 +306,7 @@ describe('Local Positioning', () => {
 
       await ctrl.show();
       expect(normalizeTransformStyle(ctrl._contentNodeWrapper.style.transform)).to.equal(
-        'translate3d(10px, -30px, 0px)',
+        'translate3d(0px, -30px, 0px)',
         'Popper positioning values',
       );
 
@@ -328,8 +318,8 @@ describe('Local Positioning', () => {
           },
         },
       });
-      expect(normalizeTransformStyle(contentChild.style.transform)).to.equal(
-        'translate3d(10px, -40px, 0px)',
+      expect(normalizeTransformStyle(ctrl._contentNodeWrapper.style.transform)).to.equal(
+        'translate3d(0px, -40px, 0px)',
         'Popper positioning Y value should be 10 less than previous, due to the added extra 10px offset',
       );
     });
@@ -339,7 +329,7 @@ describe('Local Positioning', () => {
         <div role="button" style="width: 60px;">invoker</div>
       `);
       const ctrl = new OverlayController({
-        ...withDefaultLocalConfig(),
+        ...withLocalTestConfig(),
         inheritsReferenceWidth: 'min',
         invokerNode,
       });
@@ -352,7 +342,7 @@ describe('Local Positioning', () => {
         <div role="button" style="width: 60px;">invoker</div>
       `);
       const ctrl = new OverlayController({
-        ...withDefaultLocalConfig(),
+        ...withLocalTestConfig(),
         inheritsReferenceWidth: 'max',
         invokerNode,
       });
@@ -365,7 +355,7 @@ describe('Local Positioning', () => {
         <div role="button" style="width: 60px;">invoker</div>`
       );
       const ctrl = new OverlayController({
-        ...withDefaultLocalConfig(),
+        ...withLocalTestConfig(),
         inheritsReferenceWidth: 'full',
         invokerNode,
       });
