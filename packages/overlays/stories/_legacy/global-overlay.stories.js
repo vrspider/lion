@@ -405,7 +405,7 @@ storiesOf('Global Overlay System|Global Overlay', module)
       firstUpdated() {
         this._editOverlay = overlays.add(
           new GlobalOverlayController({
-            focusElementAfterHide: this.shadowRoot.querySelector('button'),
+            elementToFocusAfterHide: this.shadowRoot.querySelector('button'),
             contentTemplate: ({ username = 'standard' } = {}) => html`
               <edit-username-overlay
                 username="${username}"

@@ -2,7 +2,7 @@ import { html, css, LitElement, SlotMixin } from '@lion/core';
 import {
   OverlayController,
   withDropdownConfig,
-  OverlayInterfaceMixin,
+  OverlayMixin,
 } from '@lion/overlays';
 import { FormControlMixin, InteractionStateMixin, FormRegistrarMixin } from '@lion/field';
 import { ValidateMixin } from '@lion/validate';
@@ -29,7 +29,7 @@ function detectInteractionMode() {
  * @customElement lion-select-rich
  * @extends LionField
  */
-export class LionSelectRich extends OverlayInterfaceMixin(FormRegistrarMixin(
+export class LionSelectRich extends OverlayMixin(FormRegistrarMixin(
   InteractionStateMixin(ValidateMixin(FormControlMixin(SlotMixin(LitElement))))),
 ) {
   static get properties() {
@@ -246,6 +246,7 @@ export class LionSelectRich extends OverlayInterfaceMixin(FormRegistrarMixin(
    * @param {*} child
    */
   addFormElement(child) {
+    console.log('addFormElement', child);
     super.addFormElement(child);
     // we need to adjust the elements being registered
     /* eslint-disable no-param-reassign */
@@ -363,6 +364,7 @@ export class LionSelectRich extends OverlayInterfaceMixin(FormRegistrarMixin(
   }
 
   __getNextEnabledOption(currentIndex, offset = 1) {
+
     for (let i = currentIndex + offset; i < this.formElements.length; i += 1) {
       if (this.formElements[i] && !this.formElements[i].disabled) {
         return i;
@@ -388,6 +390,8 @@ export class LionSelectRich extends OverlayInterfaceMixin(FormRegistrarMixin(
    * @param ev - the keydown event object
    */
   __listboxOnKeyUp(ev) {
+    console.log('vroem');
+
     if (this.disabled) {
       return;
     }
@@ -413,10 +417,10 @@ export class LionSelectRich extends OverlayInterfaceMixin(FormRegistrarMixin(
         break;
       case 'ArrowDown':
         ev.preventDefault();
-
         this.activeIndex = this.__getNextEnabledOption(this.activeIndex);
         break;
       case 'Home':
+        console.log('[hoem]');
         ev.preventDefault();
         this.activeIndex = this.__getNextEnabledOption(0, 0);
         break;
@@ -622,14 +626,14 @@ export class LionSelectRich extends OverlayInterfaceMixin(FormRegistrarMixin(
   }
 
   /**
-   * @override Configures OverlayInterfaceMixin
+   * @override Configures OverlayMixin
    */
   get _overlayInvokerNode() {
     return this._invokerNode;
   }
 
   /**
-   * @override Configures OverlayInterfaceMixin
+   * @override Configures OverlayMixin
    */
   get _overlayContentNode() {
     return this._listboxNode;

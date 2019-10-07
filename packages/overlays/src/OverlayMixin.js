@@ -1,3 +1,4 @@
+
 import { render, dedupeMixin } from '@lion/core';
 
 /**
@@ -5,16 +6,16 @@ import { render, dedupeMixin } from '@lion/core';
  * @polymerMixin
  * @mixinFunction
  */
-export const OverlayInterfaceMixin = dedupeMixin(
+export const OverlayMixin = dedupeMixin(
   // eslint-disable-next-line no-shadow
-  superclass =>
-    class OverlayInterfaceMixin extends superclass {
+  superclass => class OverlayMixin extends superclass {
       static get properties() {
         return {
           opened: {
             type: Boolean,
             reflect: true,
           },
+          popperConfig: Object,
         };
       }
 
@@ -23,7 +24,7 @@ export const OverlayInterfaceMixin = dedupeMixin(
       }
 
       set opened(show) {
-        this._opened = show; // mainly captured for sync on firstUpdated
+        this._opened = show; // mainly captured for sync on connectedCallback
         if (this._overlayCtrl) {
           this.__syncOpened();
         }
@@ -34,6 +35,21 @@ export const OverlayInterfaceMixin = dedupeMixin(
           this._overlayCtrl.show();
         } else {
           this._overlayCtrl.hide();
+        }
+      }
+
+      get popperConfig() {
+        return this._popperConfig;
+      }
+
+      set popperConfig(config) {
+        this._popperConfig = {
+          ...this._popperConfig,
+          ...config,
+        };
+
+        if (this._overlayCtrl && this._overlayCtrl._popper) {
+          this._overlayCtrl.updatePopperConfig(this._popperConfig);
         }
       }
 
@@ -67,10 +83,10 @@ export const OverlayInterfaceMixin = dedupeMixin(
       /**
        * @desc Two options for a Subclasser:
        * - 1: Define a template in `._overlayTemplate`. In this case the overlay content is
-       * predefined and thus belongs to the web component. Examples: datepicker, select, combobox.
+       * predefined and thus belongs to the web component. Examples: datepicker.
        * - 2: Define a getter `_overlayContentNode` that returns a node reference to a (content
        * projected) node. Used when Application Developer is in charge of the content. Examples:
-       * popover, dialog, bottom sheet, dropdown, tooltip etc.
+       * popover, dialog, bottom sheet, dropdown, tooltip, select, combobox etc.
        */
       get __managesOverlayViaTemplate() {
         return Boolean(this._overlayTemplate);

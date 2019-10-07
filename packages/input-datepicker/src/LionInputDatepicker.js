@@ -3,7 +3,7 @@ import { LionInputDate } from '@lion/input-date';
 import {
   OverlayController,
   withModalDialogConfig,
-  OverlayInterfaceMixin,
+  OverlayMixin,
 } from '@lion/overlays';
 import { isValidatorApplied } from '@lion/validate';
 import '@lion/calendar/lion-calendar.js';
@@ -14,7 +14,7 @@ import './lion-calendar-overlay-frame.js';
  * @customElement lion-input-datepicker
  * @extends {LionInputDate}
  */
-export class LionInputDatepicker extends OverlayInterfaceMixin(LionInputDate) {
+export class LionInputDatepicker extends OverlayMixin(LionInputDate) {
   static get properties() {
     return {
       /**
@@ -255,7 +255,7 @@ export class LionInputDatepicker extends OverlayInterfaceMixin(LionInputDate) {
   }
 
   /**
-   * @override Configures OverlayInterfaceMixin
+   * @override Configures OverlayMixin
    * @desc returns an instance of a (dynamic) overlay controller
    * @returns {OverlayController}
    */
@@ -332,7 +332,7 @@ export class LionInputDatepicker extends OverlayInterfaceMixin(LionInputDate) {
   }
 
   /**
-   * @override Configures OverlayInterfaceMixin
+   * @override Configures OverlayMixin
    */
   get _overlayInvokerNode() {
     return this._invokerElement;

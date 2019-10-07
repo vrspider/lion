@@ -11,14 +11,14 @@ const GLOBAL_OVERLAYS_CONTAINER_CLASS = 'global-overlays__overlay-container';
 const GLOBAL_OVERLAYS_CLASS = 'global-overlays__overlay';
 const isIOS = navigator.userAgent.match(/iPhone|iPad|iPod/i);
 
-export class OverlayController extends EventTarget {
+export class OverlayController {
   /**
    * @constructor
    * @param {OverlayConfig} config initial config. Will be remembered as shared config
    * when `.updateConfig()` is called.
    */
   constructor(config = {}, manager = overlays) {
-    super();
+    this.__fakeExtendsEventTarget();
     this.manager = manager;
     this.__sharedConfig = config;
     this._defaultConfig = {
@@ -549,6 +549,14 @@ export class OverlayController extends EventTarget {
     const { default: Popper } = await this.constructor.popperModule;
     this._popper = new Popper(this._referenceNode, this._contentNodeWrapper, {
       ...this.popperConfig,
+    });
+  }
+
+  // TODO: this method has to be removed when EventTarget polyfill is available on IE11
+  __fakeExtendsEventTarget() {
+    const delegate = document.createDocumentFragment();
+    ['addEventListener', 'dispatchEvent', 'removeEventListener'].forEach(funcName => {
+      this[funcName] = (...args) => delegate[funcName](...args);
     });
   }
 }
