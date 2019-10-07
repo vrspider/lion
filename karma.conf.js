@@ -17,6 +17,8 @@ module.exports = config => {
         },
       ],
 
+      // frameworks: ['viewport'],
+
       esm: {
         nodeResolve: true,
       },

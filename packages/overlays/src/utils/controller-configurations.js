@@ -9,25 +9,27 @@ export const withBottomSheetConfig = () => ({
   viewportConfig: {
     placement: 'bottom',
   },
+  handlesAccessibility: true,
 });
 
 export const withModalDialogConfig = () => ({
-  hasBackdrop: true,
-  preventsScroll: true,
-  trapsKeyboardFocus: true,
-  hidesOnEsc: true,
-
   placementMode: 'global',
   viewportConfig: {
     placement: 'center',
   },
+
+  hasBackdrop: true,
+  preventsScroll: true,
+  trapsKeyboardFocus: true,
+  hidesOnEsc: true,
+  handlesAccessibility: true,
 });
 
 export const withDropdownConfig = () => ({
-  inheritsInvokerWidth: true,
-  hidesOnOutsideClick: true,
-
   placementMode: 'local',
+
+  inheritsReferenceWidth: true,
+  hidesOnOutsideClick: true,
   popperConfig: {
     placement: 'bottom-start',
     modifiers: {
@@ -36,4 +38,5 @@ export const withDropdownConfig = () => ({
       },
     },
   },
+  handlesAccessibility: true,
 });

@@ -21,10 +21,12 @@ export class OverlayController extends EventTarget {
     super();
     this.__sharedConfig = config;
     this._defaultConfig = {
-      invokerNode: config.invokerNode,
+      placementMode: null,
       contentNode: config.contentNode,
+      invokerNode: config.invokerNode,
+      referenceNode: null,
       elementToFocusAfterHide: document.body,
-      inheritsInvokerWidth: 'min',
+      inheritsReferenceWidth: 'min',
       hasBackdrop: false,
       isBlocking: false,
       preventsScroll: false,
@@ -32,11 +34,12 @@ export class OverlayController extends EventTarget {
       hidesOnEsc: false,
       hidesOnOutsideClick: false,
       isTooltip: false,
-      // handlesUserInteraction: false,
+      handlesUserInteraction: false,
       handlesAccessibility: false,
-      placementMode: null,
       popperConfig: null,
-      viewportConfig: null,
+      viewportConfig: {
+        placement: 'center',
+      },
     };
 
     overlays.add(this);
@@ -49,8 +52,12 @@ export class OverlayController extends EventTarget {
     this.updateConfig(config);
   }
 
+  get content() {
+    return this._contentNodeWrapper;
+  }
+
   /**
-   * @desc Element ._contentNodeWrapper will be appended to.
+   * @desc The element ._contentNodeWrapper will be appended to.
    * If viewportConfig is configured, this will be OverlayManager.globalRootNode
    * If popperConfig is configured, this will be a sibling node of invokerNode
    */
@@ -62,31 +69,38 @@ export class OverlayController extends EventTarget {
   }
 
   /**
+   * @desc The element our local overlay will be positioned relative to.
+   */
+  get _referenceNode() {
+    return this.referenceNode || this.invokerNode;
+  }
+
+  /**
    * @desc Allows to dynamically change the overlay configuration. Needed in case the
    * presentation of the overlay changes depending on screen size.
    * Note that this method is the only allowed way to update a configuration of an
-   * Overlay Controller
-   * @param {OverlayConfig} newConfig
+   * OverlayController instance.
+   * @param {OverlayConfig} cfgToAdd
    */
-  updateConfig(newConfig) {
+  updateConfig(cfgToAdd) {
     // Teardown all previous configs
     this._handleFeatures({ phase: 'teardown' });
 
-    if (newConfig.contentNode && newConfig.contentNode.isConnected) {
+    if (cfgToAdd.contentNode && cfgToAdd.contentNode.isConnected) {
       // We need to keep track of the original local context.
-      this.__originalContentParent = newConfig.contentNode.parentElement;
+      this.__originalContentParent = cfgToAdd.contentNode.parentElement;
     }
     this.__prevConfig = this.config || {};
 
     this.config = {
       ...this._defaultConfig, // our basic ingredients
       ...this.__sharedConfig, // the initial configured overlayController
-      ...newConfig, // the updated config
+      ...cfgToAdd, // the added config
     };
 
     this.__validateConfiguration(this.config);
     Object.assign(this, this.config);
-    this._init();
+    this._init({ cfgToAdd });
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -95,20 +109,23 @@ export class OverlayController extends EventTarget {
       throw new Error('You need to provide a .placementMode ("global"|"local")');
     }
     if (!['global', 'local'].includes(newConfig.placementMode)) {
-      throw new Error(`"${newConfig.placementMode}" is not a valid .placementMode, use ("global"|"local")`);
+      throw new Error(
+        `"${newConfig.placementMode}" is not a valid .placementMode, use ("global"|"local")`,
+      );
     }
     if (!newConfig.contentNode) {
       throw new Error('You need to provide a .contentNode');
     }
   }
 
-  async _init() {
+  async _init({ cfgToAdd }) {
     this.__initContentNodeWrapper();
     this.__initConnectionTarget();
     this.__initZIndex();
     if (this.handlesAccessibility) {
-      this.__initAccessibility();
+      this.__initAccessibility({ cfgToAdd });
     }
+
     if (this.placementMode === 'local') {
       // Now, it's time to lazily load Popper if not done yet
       // Do we really want to add display: inline or is this up to user?
@@ -121,7 +138,7 @@ export class OverlayController extends EventTarget {
   }
 
   __initConnectionTarget() {
-    // Now, add our node to the rightplace in dom (rendeTarget)
+    // Now, add our node to the right place in dom (rendeTarget)
     if (this.contentNode !== this.__prevConfig.contentNode) {
       this._contentNodeWrapper.appendChild(this.contentNode);
     }
@@ -131,7 +148,7 @@ export class OverlayController extends EventTarget {
       }
       else if (this.invokerNode) {
         // When a local overlay is not connected to dom yet (no .__originalContentParent found)
-        this.invokerNode.parentNode.insertBefore(
+        this.invokerNode.parentElement.insertBefore(
           this._contentNodeWrapper,
           this.invokerNode.nextSibling,
         );
@@ -150,6 +167,15 @@ export class OverlayController extends EventTarget {
     });
     this._contentNodeWrapper.style.cssText = null;
     this._contentNodeWrapper.style.display = 'none';
+
+    // if (this.contentNode.slot) {
+    //   // Since we wrapped our (previously plotted as direct descendant of host) content projected
+    //   // node, we need to make sure the new direct descendant (_contentNodeWrapper) stays projected
+    //   this._contentNodeWrapper.slot = this.contentNode.slot;
+    // } else {
+      // Make sure that your shadow dom contains this outlet, when we are adding to light dom
+      this._contentNodeWrapper.slot = '_overlay-shadow-outlet';
+    // }
   }
 
   /**
@@ -166,7 +192,6 @@ export class OverlayController extends EventTarget {
     if (!this.contentNode.id) {
       this.contentNode.setAttribute('id', this._contentId);
     }
-
     if (this.isTooltip) {
       // TODO: this could also be labelledby
       this.invokerNode.setAttribute('aria-describedby', this._contentId);
@@ -196,11 +221,37 @@ export class OverlayController extends EventTarget {
       return;
     }
     this.dispatchEvent(new Event('before-show'));
-
-    this._handleFeatures({ phase: 'setup' });
+    await this.transitionShow({ backdropNode: this.backdropNode, conentNode: this.contentNode });
     this._contentNodeWrapper.style.display = '';
+    await this._handleFeatures({ phase: 'setup' });
+    await this._handlePosition({ phase: 'setup' });
     this.elementToFocusAfterHide = elementToFocusAfterHide;
     this.dispatchEvent(new Event('show'));
+  }
+
+  // eslint-disable-next-line class-methods-use-this, no-empty-function, no-unused-vars
+  async transitionShow({ backdropNode, contentNode }) {}
+
+
+  async _handlePosition({ phase }) {
+    if (this.placementMode === 'global') {
+
+      const addOrRemove = phase === 'setup' ? 'add' : 'remove';
+      const placementClass = `${GLOBAL_OVERLAYS_CONTAINER_CLASS}--${this.viewportConfig.placement}`;
+      this._contentNodeWrapper.classList[addOrRemove](GLOBAL_OVERLAYS_CONTAINER_CLASS);
+      this._contentNodeWrapper.classList[addOrRemove](placementClass);
+      this.contentNode.classList[addOrRemove](GLOBAL_OVERLAYS_CLASS);
+    } else if (this.placementMode === 'local' && phase === 'setup') {
+      /**
+       * Popper is weird about properly positioning the popper element when it is recreated so
+       * we just recreate the popper instance to make it behave like it should.
+       * Probably related to this issue: https://github.com/FezVrasta/popper.js/issues/796
+       * calling just the .update() function on the popper instance sadly does not resolve this.
+       * This is however necessary for initial placement.
+       */
+      await this.__createPopperInstance();
+      this._popper.update();
+    }
   }
 
   /**
@@ -213,11 +264,15 @@ export class OverlayController extends EventTarget {
     }
 
     this.dispatchEvent(new Event('before-hide'));
+    // await this.transitionHide({ backdropNode: this.backdropNode, conentNode: this.contentNode });
     this._contentNodeWrapper.style.display = 'none';
     this._handleFeatures({ phase: 'teardown' });
     this.dispatchEvent(new Event('hide'));
     this._restoreFocus();
   }
+
+  // eslint-disable-next-line class-methods-use-this, no-empty-function, no-unused-vars
+  async transitionHide({ backdropNode, contentNode }) {}
 
   _restoreFocus() {
     // We only are allowed to move focus if we (still) 'own' it.
@@ -237,8 +292,7 @@ export class OverlayController extends EventTarget {
    * @param {object} config
    * @param {'setup'|'teardown'} config.phase
    */
-  _handleFeatures({ phase }) {
-    this._handlePosition({ phase });
+  async _handleFeatures({ phase }) {
     if (this.preventsScroll) {
       this._handlePreventsScroll({ phase });
     }
@@ -246,7 +300,7 @@ export class OverlayController extends EventTarget {
       this._handleBlocking({ phase });
     }
     if (this.hasBackdrop) {
-      this._handleBackdrop({ phase, renderTarget: this._renderTarget });
+      this._handleBackdrop({ phase });
     }
     if (this.trapsKeyboardFocus) {
       this._handleTrapsKeyboardFocus({ phase });
@@ -260,31 +314,14 @@ export class OverlayController extends EventTarget {
     if (this.handlesAccessibility) {
       this._handleAccessibility({ phase });
     }
-  }
-
-  async _handlePosition({ phase }) {
-    if (this.placementMode === 'global') {
-      const addOrRemove = (phase === 'setup') ? 'add' : 'remove';
-      const placementClass = `${GLOBAL_OVERLAYS_CONTAINER_CLASS}--${this.viewportConfig.placement}`;
-      this._contentNodeWrapper.classList[addOrRemove](GLOBAL_OVERLAYS_CONTAINER_CLASS);
-      this._contentNodeWrapper.classList[addOrRemove](placementClass);
-      this.contentNode.classList[addOrRemove](GLOBAL_OVERLAYS_CLASS);
-    }
-    else if (this.placementMode === 'local' && phase === 'setup') {
-      /**
-       * Popper is weird about properly positioning the popper element when it is recreated so
-       * we just recreate the popper instance to make it behave like it should.
-       * Probably related to this issue: https://github.com/FezVrasta/popper.js/issues/796
-       * calling just the .update() function on the popper instance sadly does not resolve this.
-       * This is however necessary for initial placement.
-       */
-      await this.__createPopperInstance();
-      this._popper.update();
+    if (this.inheritsReferenceWidth) {
+      this._handleInheritsReferenceWidth();
     }
   }
 
-  _handlePreventsScroll({ phase }) { // eslint-disable-line class-methods-use-this
-    const addOrRemove = (phase === 'setup') ? 'add' : 'remove';
+  // eslint-disable-next-line class-methods-use-this
+  _handlePreventsScroll({ phase }) {
+    const addOrRemove = phase === 'setup' ? 'add' : 'remove';
     document.body.classList[addOrRemove]('global-overlays-scroll-lock');
     if (isIOS) {
       // iOS has issues with overlays with input fields. This is fixed by applying
@@ -294,7 +331,7 @@ export class OverlayController extends EventTarget {
   }
 
   _handleBlocking({ phase }) {
-    const addOrRemove = (phase === 'setup') ? 'add' : 'remove';
+    const addOrRemove = phase === 'setup' ? 'add' : 'remove';
     this._contentNodeWrapper.classList[addOrRemove]('global-overlays__overlay--blocking');
     if (this.backdropNode) {
       this.backdropNode.classList[addOrRemove]('global-overlays__backdrop--blocking');
@@ -302,8 +339,7 @@ export class OverlayController extends EventTarget {
 
     if (phase === 'setup') {
       this.manager.globalRootNode.classList.add('global-overlays--blocking-opened');
-    }
-    else if (phase === 'teardown') {
+    } else if (phase === 'teardown') {
       const blockingController = this.manager.shownList.find(
         ctrl => ctrl !== this && ctrl.isBlocking === true,
       );
@@ -319,11 +355,16 @@ export class OverlayController extends EventTarget {
    * it is removed. Otherwise this is the first time displaying a backdrop, so a fade-in
    * animation is played.
    */
-  _handleBackdrop({ animation = true, renderTarget, phase }) {
+  _handleBackdrop({ animation = true, phase }) {
+    if (this.placementMode === 'local') {
+      return; // coming soon...
+    }
+
     if (phase === 'setup') {
       this.backdropNode = document.createElement('div');
       this.backdropNode.classList.add('global-overlays__backdrop');
-      renderTarget.insertBefore(this.backdropNode, this._contentNodeWrapper);
+      this.backdropNode.slot = '_overlay-shadow-outlet';
+      this._contentNodeWrapper.parentElement.insertBefore(this.backdropNode, this._contentNodeWrapper);
 
       if (animation === true) {
         this.backdropNode.classList.add('global-overlays__backdrop--fade-in');
@@ -374,29 +415,32 @@ export class OverlayController extends EventTarget {
   _handleHidesOnEsc({ phase }) {
     if (phase === 'setup') {
       this.__escKeyHandler = ev => ev.key === 'Escape' && this.hide();
-      this._contentNodeWrapper.addEventListener('keyup', this.__escKeyHandler);
-    }
-    else if (phase === 'teardown') {
-      this._contentNodeWrapper.removeEventListener('keyup', this.__escKeyHandler);
+      this.contentNode.addEventListener('keyup', this.__escKeyHandler);
+    } else if (phase === 'teardown') {
+      this.contentNode.removeEventListener('keyup', this.__escKeyHandler);
     }
   }
 
-  _handleInheritsInvokerWidth() {
-    const invokerWidth = `${this.invokerNode.clientWidth}px`;
-    switch (this.inheritsInvokerWidth) {
+  _handleInheritsReferenceWidth() {
+    if (!this._referenceNode) {
+      return;
+    }
+
+    const referenceWidth = `${this._referenceNode.clientWidth}px`;
+    switch (this.inheritsReferenceWidth) {
       case 'max':
-        this._contentNodeWrapper.style.maxWidth = invokerWidth;
+        this._contentNodeWrapper.style.maxWidth = referenceWidth;
         break;
       case 'full':
-        this._contentNodeWrapper.style.width = invokerWidth;
+        this._contentNodeWrapper.style.width = referenceWidth;
         break;
       default:
-        this._contentNodeWrapper.style.minWidth = invokerWidth;
+        this._contentNodeWrapper.style.minWidth = referenceWidth;
     }
   }
 
   _handleHidesOnOutsideClick({ phase }) {
-    const addOrRemoveListener = (phase === 'setup') ? 'addEventListener' : 'removeEventListener';
+    const addOrRemoveListener = phase === 'setup' ? 'addEventListener' : 'removeEventListener';
 
     if (phase === 'setup') {
       let wasClickInside = false;
@@ -424,7 +468,7 @@ export class OverlayController extends EventTarget {
 
   _handleAccessibility({ phase }) {
     if (!this.isTooltip) {
-      this.invokerNode.setAttribute('aria-expanded', (phase === 'setup'));
+      this.invokerNode.setAttribute('aria-expanded', phase === 'setup');
     }
   }
 
@@ -488,7 +532,7 @@ export class OverlayController extends EventTarget {
       this._popper = null;
     }
     const { default: Popper } = await this.constructor.popperModule;
-    this._popper = new Popper(this.invokerNode, this._contentNodeWrapper, {
+    this._popper = new Popper(this._referenceNode, this._contentNodeWrapper, {
       ...this.popperConfig,
     });
   }

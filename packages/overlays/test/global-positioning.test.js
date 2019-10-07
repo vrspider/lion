@@ -1,22 +1,12 @@
 import { expect, html } from '@open-wc/testing';
+import { renderAsNode } from '@lion/core';
 import { OverlayController } from '../src/OverlayController.js';
 
-import {
-  getRootNode,
-  // getRenderedContainers,
-  // isEqualOrHasParent,
-  // getTopContainer,
-  // getTopOverlay,
-  // getRenderedContainer,
-  // getRenderedOverlay,
-  cleanup,
-  renderToNode,
-} from '../test-helpers/global-positioning-helpers.js';
-
+import { getRootNode, cleanup } from '../test-helpers/global-positioning-helpers.js';
 
 const withDefaultGlobalConfig = () => ({
   placementMode: 'global',
-  contentNode: renderToNode(html`
+  contentNode: renderAsNode(html`
     <p>my content</p>
   `),
 });
@@ -36,7 +26,7 @@ describe('Global Positioning', () => {
 
     // TODO: not implemented atm. Is this needed? If so, it should be covered in a css class
     // on a wrapping element, since it may break user styling.
-    it.skip('sets contentNode styling to display flex by default', async () => {
+    it.skip('sets ".contentNode" styling to display flex by default', async () => {
       const ctrl = new OverlayController({
         ...withDefaultGlobalConfig(),
       });
@@ -49,13 +39,12 @@ describe('Global Positioning', () => {
 
   describe('viewportConfig', () => {
     it('positions the overlay in center by default', async () => {
-      const controller = new OverlayController({
+      const ctrl = new OverlayController({
         ...withDefaultGlobalConfig(),
       });
-      controller.show();
-      expect(controller.overlayContainerPlacementClass).to.equal(
-        'global-overlays__overlay-container--center',
-      );
+      await ctrl.show();
+      expect(ctrl._contentNodeWrapper.classList
+        .contains('global-overlays__overlay-container--center')).to.be.true;
     });
 
     it('positions relative to the viewport ', async () => {
@@ -70,17 +59,16 @@ describe('Global Positioning', () => {
         'left',
         'center',
       ];
-      placementMap.forEach(viewportPlacement => {
-        const controller = new OverlayController({
+      placementMap.forEach(async (viewportPlacement) => {
+        const ctrl = new OverlayController({
           ...withDefaultGlobalConfig(),
           viewportConfig: {
             placement: viewportPlacement,
           },
         });
-        controller.show();
-        expect(controller.overlayContainerPlacementClass).to.equal(
-          `global-overlays__overlay-container--${viewportPlacement}`,
-        );
+        await ctrl.show();
+        expect(ctrl._contentNodeWrapper.classList
+          .contains(`global-overlays__overlay-container--${viewportPlacement}`)).to.be.true;
       });
     });
   });

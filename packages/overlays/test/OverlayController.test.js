@@ -1,5 +1,5 @@
 /* eslint-disable no-new */
-import { expect, html, fixture } from '@open-wc/testing';
+import { expect, html, fixture, aTimeout } from '@open-wc/testing';
 import '@lion/core/test-helpers/keyboardEventShimIE.js';
 import sinon from 'sinon';
 import { keyCodes } from '../src/utils/key-codes.js';
@@ -22,7 +22,6 @@ const withDefaultLocalConfig = () => ({
 });
 
 describe('OverlayController', () => {
-
   describe('Init', () => {
     // adds OverlayController instance to OverlayManager
     // prepares renderTarget
@@ -48,23 +47,24 @@ describe('OverlayController', () => {
   });
 
   describe('Feature Configuration', () => {
-    describe.skip('trapsKeyboardFocus', () => {
-      it.skip('focuses the overlay on show', async () => {
+    // FIXME: Broken tests because activeElement is body. Weird, because the demos work just fine.
+    describe('trapsKeyboardFocus', () => {
+      it('focuses the overlay on show', async () => {
         const ctrl = new OverlayController({
           ...withDefaultGlobalConfig(),
           trapsKeyboardFocus: true,
-          viewportConfig: {},
         });
         await ctrl.show();
         expect(ctrl.contentNode).to.equal(document.activeElement);
       });
 
-      it.skip('keeps focus within the overlay e.g. you can not tab out by accident', async () => {
+      it('keeps focus within the overlay e.g. you can not tab out by accident', async () => {
         const contentNode = await fixture(html`
           <div><input id="input1"><input id="input2"></div>
         `);
         const ctrl = new OverlayController({
           ...withDefaultGlobalConfig(),
+          trapsKeyboardFocus: true,
           contentNode,
         });
         await ctrl.show();
@@ -85,7 +85,7 @@ describe('OverlayController', () => {
         expect(input1).to.equal(document.activeElement);
       });
 
-      it.skip('allows to move the focus outside of the overlay if trapsKeyboardFocus is disabled', async () => {
+      it('allows to move the focus outside of the overlay if trapsKeyboardFocus is disabled', async () => {
         const contentNode = await fixture(html`
           <div><input></div>
         `);
@@ -102,7 +102,7 @@ describe('OverlayController', () => {
         await ctrl.show();
 
         const elOutside = await fixture(html`
-          <input>
+          <input />
         `);
         const input = ctrl.contentNode.querySelector('input');
 
@@ -120,8 +120,8 @@ describe('OverlayController', () => {
           hidesOnEsc: true,
         });
         await ctrl.show();
-
-        ctrl._contentNodeWrapper.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' }));
+        ctrl.contentNode.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' }));
+        await aTimeout();
         expect(ctrl.isShown).to.be.false;
       });
 
@@ -144,7 +144,7 @@ describe('OverlayController', () => {
             placement: 'top-left',
           },
           contentNode: renderToNode(html`
-            <div><input>=</div>
+            <div><input />=</div>
           `),
         });
 
@@ -158,20 +158,19 @@ describe('OverlayController', () => {
       });
 
       it('supports elementToFocusAfterHide option to focus it when hiding', async () => {
-        const input = await fixture(html`
-          <input />
-        `);
+        const input = document.createElement('input');
 
-        const ctrl = overlays.add(
-          new GlobalOverlayController({
+        const ctrl =
+          new OverlayController({
+            ...withDefaultGlobalConfig(),
             elementToFocusAfterHide: input,
             viewportConfig: {
               placement: 'top-left',
             },
-            contentTemplate: () => html`
+            contentNode: renderToNode(html`
               <div><textarea></textarea></div>
-            `,
-          }),
+            `),
+          },
         );
 
         await ctrl.show();
@@ -184,20 +183,16 @@ describe('OverlayController', () => {
       });
 
       it('allows to set elementToFocusAfterHide on show', async () => {
-        const input = await fixture(html`
-          <input />
-        `);
-
-        const ctrl = overlays.add(
-          new GlobalOverlayController({
-            viewportConfig: {
-              placement: 'top-left',
-            },
-            contentTemplate: () => html`
-              <div><textarea></textarea></div>
-            `,
-          }),
-        );
+        const input = document.createElement('input');
+        const ctrl = new OverlayController({
+          ...withDefaultGlobalConfig(),
+          viewportConfig: {
+            placement: 'top-left',
+          },
+          contentNode: renderToNode(html`
+            <div><textarea></textarea></div>
+          `),
+        });
 
         await ctrl.show(input);
         const textarea = getTopOverlay().querySelector('textarea');
@@ -209,20 +204,16 @@ describe('OverlayController', () => {
       });
 
       it('allows to set elementToFocusAfterHide on sync', async () => {
-        const input = await fixture(html`
-          <input />
-        `);
-
-        const ctrl = overlays.add(
-          new GlobalOverlayController({
-            viewportConfig: {
-              placement: 'top-left',
-            },
-            contentTemplate: () => html`
-              <div><textarea></textarea></div>
-            `,
-          }),
-        );
+        const input = document.createElement('input');
+        const ctrl = new OverlayController({
+          ...withDefaultGlobalConfig(),
+          viewportConfig: {
+            placement: 'top-left',
+          },
+          contentNode: renderToNode(html`
+            <div><textarea></textarea></div>
+          `),
+        });
 
         await ctrl.sync({ isShown: true, elementToFocusAfterHide: input });
         const textarea = getTopOverlay().querySelector('textarea');
@@ -240,7 +231,6 @@ describe('OverlayController', () => {
         await ctrl.sync({ isShown: false });
         expect(document.activeElement).to.equal(input);
       });
-
     });
 
     describe('preventsScroll', () => {
@@ -396,9 +386,7 @@ describe('OverlayController', () => {
 
   describe('Update Configuration', () => {
     // reinitializes content (cleanup etc)
-
     // handles switching placementMode
-
     // respects the inital config provided to new OverlayController(initialConfig)
   });
 
@@ -445,10 +433,12 @@ describe('OverlayController', () => {
       expect(ctrl.invokerNode.getAttribute('aria-controls')).to.contain(ctrl.contentNode.id);
     });
 
-    it.skip('adds [role=dialog] on content', async () => {
+    it('adds [role=dialog] on content', async () => {
+      const invokerNode = await fixture('<div role="button">invoker</div>');
       const ctrl = new OverlayController({
         ...withDefaultLocalConfig(),
         handlesAccessibility: true,
+        invokerNode,
       });
       expect(ctrl.contentNode.getAttribute('role')).to.equal('dialog');
     });
@@ -466,17 +456,16 @@ describe('OverlayController', () => {
       });
 
       it('adds [role=tooltip] on content', async () => {
+        const invokerNode = await fixture('<div role="button">invoker</div>');
         const ctrl = new OverlayController({
           ...withDefaultLocalConfig(),
           handlesAccessibility: true,
           isTooltip: true,
+          invokerNode,
         });
         expect(ctrl.contentNode.getAttribute('role')).to.equal('tooltip');
       });
-
     });
-
-    // test tooltip functionality: describedby (only local!) and role=tooltip
   });
 
   describe('Exception handling', () => {

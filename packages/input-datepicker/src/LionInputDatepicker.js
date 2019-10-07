@@ -1,15 +1,13 @@
 import { html, ifDefined, renderAsNode } from '@lion/core';
-import { render as renderShady } from 'lit-html/lib/shady-render.js';
 import { LionInputDate } from '@lion/input-date';
 import {
   OverlayController,
   withModalDialogConfig,
-  withDropdownConfig,
+  OverlayInterfaceMixin,
 } from '@lion/overlays';
-import { Unparseable, isValidatorApplied } from '@lion/validate';
+import { isValidatorApplied } from '@lion/validate';
 import '@lion/calendar/lion-calendar.js';
 import './lion-calendar-overlay-frame.js';
-import { OverlayInterfaceMixin } from './OverlayInterfaceMixin.js';
 
 
 /**
@@ -184,7 +182,6 @@ export class LionInputDatepicker extends OverlayInterfaceMixin(LionInputDate) {
 
   firstUpdated(c) {
     super.firstUpdated(c);
-    this.__createOverlay();
     this.__toggleInvokerDisabled();
   }
 
@@ -204,6 +201,11 @@ export class LionInputDatepicker extends OverlayInterfaceMixin(LionInputDate) {
     }
   }
 
+  /**
+   * Defining this overlay as a templates lets OverlayInteraceMixin
+   * this is our source to give as .contentNode to OverlayController.
+   * Important: do not change the name of this method.
+   */
   _overlayTemplate() {
     return html`
       <lion-calendar-overlay-frame @dialog-close=${() => this._overlayCtrl.hide()}>
@@ -253,27 +255,18 @@ export class LionInputDatepicker extends OverlayInterfaceMixin(LionInputDate) {
   }
 
   /**
+   * @override Configures OverlayInterfaceMixin
    * @desc returns an instance of a (dynamic) overlay controller
    * @returns {OverlayController}
    */
   // eslint-disable-next-line class-methods-use-this
   _defineOverlay({ contentNode, invokerNode }) {
     const ctrl = new OverlayController({
-      ...withDropdownConfig(),
+      ...withModalDialogConfig(),
       contentNode,
       invokerNode,
       elementToFocusAfterHide: invokerNode,
-      hidesOnEsc: true,
     });
-
-    ctrl.addEventListener('before-show', () => {
-      if (window.innerWidth >= 600) {
-        ctrl.updateConfig(withDropdownConfig());
-      } else {
-        ctrl.updateConfig(withModalDialogConfig());
-      }
-    });
-
     return ctrl;
   }
 
@@ -311,7 +304,7 @@ export class LionInputDatepicker extends OverlayInterfaceMixin(LionInputDate) {
    * @returns {Date|undefined} a 'guarded' modelValue
    */
   static __getSyncDownValue(modelValue) {
-    return modelValue instanceof Unparseable ? undefined : modelValue;
+    return modelValue instanceof Date ? modelValue : undefined;
   }
 
   /**
@@ -336,5 +329,12 @@ export class LionInputDatepicker extends OverlayInterfaceMixin(LionInputDate) {
         this.__calendarDisableDates = param;
       }
     });
+  }
+
+  /**
+   * @override Configures OverlayInterfaceMixin
+   */
+  get _overlayInvokerNode() {
+    return this._invokerElement;
   }
 }
