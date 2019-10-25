@@ -324,6 +324,21 @@ describe('<lion-fieldset>', () => {
       await nextFrame();
       expect(el.error.even).to.equal(undefined);
     });
+
+    it('potentially shows fieldset error message on interaction change', async () => {
+      const input1IsTen = value => ({ input1IsTen: value.input1 === 10 });
+      const isNumber = value => ({ isNumber: typeof value === 'number' });
+      const el = await fixture(html`
+        <${tag} .errorValidators=${[[input1IsTen]]}>
+          <${childTag} name="input1" .errorValidators=${[[isNumber]]}></${childTag}>
+        </${tag}>
+      `);
+      const input1 = el.querySelector(childTagString);
+      input1.modelValue = 2;
+      input1.touched = true;
+      expect(el.error.input1IsTen).to.be.true;
+      expect(el.errorShow).to.be.true;
+    });
   });
 
   describe('interaction states', () => {

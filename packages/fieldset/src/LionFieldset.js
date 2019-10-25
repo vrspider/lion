@@ -264,14 +264,17 @@ export class LionFieldset extends FormRegistrarMixin(
   }
 
   _updateFocusedClass() {
+    this._createMessageAndRenderFeedback();
     this.classList[this.touched ? 'add' : 'remove']('state-focused');
   }
 
   _updateTouchedClass() {
+    this._createMessageAndRenderFeedback();
     this.classList[this.touched ? 'add' : 'remove']('state-touched');
   }
 
   _updateDirtyClass() {
+    this._createMessageAndRenderFeedback();
     this.classList[this.dirty ? 'add' : 'remove']('state-dirty');
   }
 
