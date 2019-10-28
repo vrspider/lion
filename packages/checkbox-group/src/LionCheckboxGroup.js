@@ -18,7 +18,7 @@ export class LionCheckboxGroup extends LionFieldset {
     this.addEventListener('click', this._checkForChildrenClick);
 
     // checks for any of the children to be prefilled
-    this._checkboxGroupPrefilled = super.prefilled;
+    this.__prefilled = super.prefilled;
   }
 
   disconnectedCallback() {
@@ -40,7 +40,7 @@ export class LionCheckboxGroup extends LionFieldset {
     const groupHasFocus = this.focused;
     if (this.__groupHadFocus && !groupHasFocus) {
       this._checkboxGroupTouched = true;
-      this._checkboxGroupPrefilled = super.prefilled; // right time to reconsider prefilled
+      this.__prefilled = super.prefilled; // right time to reconsider prefilled
       this.__checkboxGroupPrefilledHasBeenSet = true;
     }
     this.__groupHadFocus = groupHasFocus;

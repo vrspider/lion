@@ -1,6 +1,8 @@
 import { storiesOf, html } from '@open-wc/demoing-storybook';
 
 import '../lion-fieldset.js';
+import { localize } from '@lion/localize';
+import { isNumberValidator, minLengthValidator } from '@lion/validate';
 
 storiesOf('Forms|Fieldset', module)
   .add(
@@ -79,4 +81,38 @@ storiesOf('Forms|Fieldset', module)
         </button>
       </lion-fieldset>
     `,
-  );
+  )
+  .add('Validation', () => {
+    const input1IsTen = value => {
+      // const error = value.input1 === 'cats' && value.input2 === 'dogs';
+      // const suppressError = !document.querySelectorA('[name=input2]').touched;
+      return {
+        input1IsTen: value.input1 === 'cats' && value.input2 === 'dogs',
+      };
+    };
+    localize.locale = 'en-GB';
+    try {
+      localize.addData('en-GB', 'lion-validate+input1IsTen', {
+        error: {
+          input1IsTen: 'Input 1 needs to be "cats" and Input 2 needs to be "dogs"',
+        },
+      });
+    } catch (error) {
+      // expected as it's a demo
+    }
+
+    return html`
+      <lion-fieldset .errorValidators=${[[input1IsTen]]}>
+        <lion-input
+          name="input1"
+          help-text="longer then 2 characters"
+          .errorValidators=${[minLengthValidator(3)]}
+        ></lion-input>
+        <lion-input
+          name="input2"
+          help-text="longer then 2 characters"
+          .errorValidators=${[minLengthValidator(3)]}
+        ></lion-input>
+      </lion-fieldset>
+    `;
+  });

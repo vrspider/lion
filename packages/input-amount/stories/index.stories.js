@@ -1,6 +1,7 @@
 import { storiesOf, html } from '@open-wc/demoing-storybook';
 
 import '../lion-input-amount.js';
+import { localize } from '@lion/localize';
 
 storiesOf('Forms|Input Amount', module)
   .add(
@@ -68,6 +69,62 @@ storiesOf('Forms|Input Amount', module)
       </lion-input-amount>
     `,
   )
+  .add('a', () => {
+    const isFake = modelValue => ({ isFake: modelValue.input1 === 10 });
+    localize.locale = 'en-GB';
+
+    try {
+      localize.addData('en-GB', 'lion-validate+isFake', {
+        error: {
+          isFake: 'Input 1 needs to be "10"',
+        },
+      });
+    } catch (error) {
+      // expected as it's a demo
+    }
+
+    return html`
+      <lion-fieldset id="test-fieldset1" name="test-fieldset1" .errorValidators=${[[isFake]]}>
+        <lion-input-amount name="input1"></lion-input-amount>
+      </lion-fieldset>
+    `;
+  })
+  .add('b', () => {
+    // function isFake() {
+    //   console.log('pow');
+    //   return true;
+    // }
+
+    const isFake = modelValue => ({ isFake: modelValue === 'cat' });
+    localize.locale = 'en-GB';
+
+    // const isFakeValidator = (...factoryParams) => [
+    //   (...params) => ({ isFake: isFake(...params) }),
+    //   ...factoryParams,
+    // ];
+
+    try {
+      localize.addData('en-GB', 'lion-validate+isFake', {
+        error: {
+          isFake: 'You can only use gmail.com email addresses.',
+        },
+      });
+      localize.addData('nl', 'lion-validate+isFake', {
+        error: {
+          isFake: 'Je mag hier alleen gmail.com e-mailadressen gebruiken.',
+        },
+      });
+    } catch (error) {
+      // expected as it's a demo
+    }
+
+    return html`
+      <lion-fieldset label="fieldset" name="fieldset1" .errorValidators=${[[isFake]]}>
+        <lion-input label="input" name="input1" .errorValidators=${[[isFake]]}></lion-input>
+      </lion-fieldset>
+    `;
+  })
+
   .add(
     'Show no fractions',
     () => html`

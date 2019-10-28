@@ -82,6 +82,15 @@ export const InteractionStateMixin = dedupeMixin(
         this._iStateOnValueChange = this._iStateOnValueChange.bind(this);
       }
 
+      get prefilled() {
+        return this.__prefilled;
+      }
+
+      set prefilled(value) {
+        this.__prefilled = value;
+        this.requestUpdate();
+      }
+
       /**
        * Register event handlers and validate prefilled inputs
        */

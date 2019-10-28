@@ -57,16 +57,8 @@ export class LionFieldset extends FormRegistrarMixin(
     this._setValueMapForAllFormElements('formattedValue', values);
   }
 
-  get touched() {
-    return this._anyFormElementHas('touched');
-  }
-
   get dirty() {
     return this._anyFormElementHas('dirty');
-  }
-
-  get prefilled() {
-    return this._anyFormElementHas('prefilled');
   }
 
   get focused() {
@@ -87,25 +79,77 @@ export class LionFieldset extends FormRegistrarMixin(
     this.formElements = {};
     this.__addedSubValidators = false;
     this.__createTypeAbsenceValidators();
+    this._checkboxGroupTouched = false;
+    this._checkboxGroupPrefilled = false;
+    this._setTouchedAndPrefilled = this._setTouchedAndPrefilled.bind(this);
+    this._checkForOutsideClick = this._checkForOutsideClick.bind(this);
+  }
+
+  get touched() {
+    return this._checkboxGroupTouched;
+  }
+
+  set touched(value) {
+    this._checkboxGroupTouched = value;
+  }
+
+  get prefilled() {
+    return this._checkboxGroupPrefilled;
+  }
+
+  set prefilled(value) {
+    this._checkboxGroupPrefilled = value;
+  }
+
+  /**
+   * Leave event will be fired when previous document.activeElement
+   * is inside group and current document.activeElement is outside.
+   */
+  _setTouchedAndPrefilled() {
+    const groupHasFocus = this.focused;
+    if (this.__groupHadFocus && !groupHasFocus) {
+      this.touched = true;
+      this.prefilled = this._anyFormElementHas('prefilled');
+    }
+    this.__groupHadFocus = groupHasFocus;
+  }
+
+  _checkForOutsideClick(event) {
+    const outsideGroupClicked = !this.contains(event.target);
+    if (outsideGroupClicked) {
+      this._setTouchedAndPrefilled();
+      this._createMessageAndRenderFeedback();
+    }
   }
 
   connectedCallback() {
     // eslint-disable-next-line wc/guard-super-call
     super.connectedCallback();
     this.addEventListener('validation-done', this.__validate);
-    this.addEventListener('focused-changed', this._updateFocusedClass);
+    this.addEventListener('focusout', this._updateFocusedClass);
     this.addEventListener('touched-changed', this._updateTouchedClass);
     this.addEventListener('dirty-changed', this._updateDirtyClass);
     this._setRole();
+
+    // We listen for focusin(instead of focus), because it bubbles and gives the right event order
+    window.addEventListener('focusin', this._setTouchedAndPrefilled);
+
+    document.addEventListener('click', this._checkForOutsideClick);
+
+    // checks for any of the children to be prefilled
+    this._checkboxGroupPrefilled = this._anyFormElementHas('prefilled');
   }
 
   disconnectedCallback() {
     // eslint-disable-next-line wc/guard-super-call
     super.disconnectedCallback();
     this.removeEventListener('validation-done', this.__validate);
-    this.removeEventListener('focused-changed', this._updateFocusedClass);
+    this.removeEventListener('focusout', this._updateFocusedClass);
     this.removeEventListener('touched-changed', this._updateTouchedClass);
     this.removeEventListener('dirty-changed', this._updateDirtyClass);
+
+    window.removeEventListener('focusin', this._setTouchedAndPrefilled);
+    document.removeEventListener('click', this._checkForOutsideClick);
   }
 
   updated(changedProps) {
@@ -263,12 +307,20 @@ export class LionFieldset extends FormRegistrarMixin(
     }
   }
 
-  _updateFocusedClass() {
+  _updateFocusedClass(ev) {
+    const lastEl = this.formElementsArray[this.formElementsArray.length - 1];
+    if (ev.target === lastEl) {
+      this._setTouchedAndPrefilled();
+    }
     this._createMessageAndRenderFeedback();
     this.classList[this.touched ? 'add' : 'remove']('state-focused');
   }
 
-  _updateTouchedClass() {
+  _updateTouchedClass(ev) {
+    const lastEl = this.formElementsArray[this.formElementsArray.length - 1];
+    if (ev.target === lastEl) {
+      this._setTouchedAndPrefilled();
+    }
     this._createMessageAndRenderFeedback();
     this.classList[this.touched ? 'add' : 'remove']('state-touched');
   }

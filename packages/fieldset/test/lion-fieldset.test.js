@@ -325,7 +325,7 @@ describe('<lion-fieldset>', () => {
       expect(el.error.even).to.equal(undefined);
     });
 
-    it('potentially shows fieldset error message on interaction change', async () => {
+    it.only('potentially shows fieldset error message on interaction change', async () => {
       const input1IsTen = value => ({ input1IsTen: value.input1 === 10 });
       const isNumber = value => ({ isNumber: typeof value === 'number' });
       const el = await fixture(html`
@@ -336,6 +336,30 @@ describe('<lion-fieldset>', () => {
       const input1 = el.querySelector(childTagString);
       input1.modelValue = 2;
       input1.touched = true;
+      await nextFrame();
+      expect(el.error.input1IsTen).to.be.true;
+      expect(el.errorShow).to.be.true;
+    });
+
+    it('show error if tabbing "out" of last ', async () => {
+      const input1IsTen = value => ({ input1IsTen: value.input1 === 10 });
+      const isNumber = value => ({ isNumber: typeof value === 'number' });
+      const outSideButton = await fixture(html`
+        <button>outside</button>
+      `);
+      const el = await fixture(html`
+        <${tag} .errorValidators=${[[input1IsTen]]}>
+          <${childTag} name="input1" .errorValidators=${[[isNumber]]}></${childTag}>
+          <${childTag} name="input2" .errorValidators=${[[isNumber]]}></${childTag}>
+        </${tag}>
+      `);
+      const inputs = el.querySelectorAll(childTagString);
+      inputs[1].modelValue = 2; // make it dirty
+      inputs[1].focus();
+
+      outSideButton.focus();
+      await nextFrame();
+
       expect(el.error.input1IsTen).to.be.true;
       expect(el.errorShow).to.be.true;
     });
@@ -417,6 +441,81 @@ describe('<lion-fieldset>', () => {
       `);
       await nextFrame();
       expect(fieldsetPrefilled.prefilled).to.equal(true, 'prefilled on init');
+    });
+
+    it(`becomes "touched" once the last element of a group becomes blurred by keyboard
+      interaction (e.g. tabbing through the checkbox-group)`, async () => {
+      const el = await fixture(html`
+        <${tag}>
+          <label slot="label">My group</label>
+          <${childTag} name="myGroup[]" label="Option 1" value="1"></${childTag}>
+          <${childTag} name="myGroup[]" label="Option 2" value="2"></${childTag}>
+        </${tag}>
+      `);
+      await nextFrame();
+
+      const button = await fixture(`<button>Blur</button>`);
+
+      expect(el.touched).to.equal(false, 'initially, touched state is false');
+      el.children[2].focus();
+      expect(el.touched).to.equal(false, 'focus is on second checkbox');
+      button.focus();
+      expect(el.touched).to.equal(
+        true,
+        `focus is on element behind second checkbox (group has blurred)`,
+      );
+    });
+
+    it(`becomes "touched" once the group as a whole becomes blurred via mouse interaction after
+      keyboard interaction (e.g. focus is moved inside the group and user clicks somewhere outside
+      the group)`, async () => {
+      const groupWrapper = await fixture(html`
+        <div tabindex="0">
+          <${tag}>
+            <label slot="label">My group</label>
+            <${childTag} name="myGroup[]" label="Option 1" value="1"></${childTag}>
+            <${childTag} name="myGroup[]" label="Option 2" value="2"></${childTag}>
+          </${tag}>
+        </div>
+      `);
+      await nextFrame();
+
+      const el = groupWrapper.children[0];
+      await el.children[1].updateComplete;
+      el.children[1].focus();
+      expect(el.touched).to.equal(false, 'initially, touched state is false');
+      el.children[2].focus(); // simulate tab
+      expect(el.touched).to.equal(false, 'focus is on second checkbox');
+      // simulate click outside
+      sinon.spy(el, '_setTouchedAndPrefilled');
+      groupWrapper.click(); // blur the group via a click
+      expect(el._setTouchedAndPrefilled.callCount).to.equal(1);
+      // For some reason, document.activeElement is not updated after groupWrapper.click() (this
+      // happens on user clicks, not on imperative clicks). So we check if the private callbacks
+      // for outside clicks are called (they trigger _setTouchedAndPrefilled call).
+      // To make sure focus is moved, we 'help' the test here to mimic browser behavior.
+      // groupWrapper.focus();
+      await triggerFocusFor(groupWrapper);
+      expect(el.touched).to.equal(true, 'focus is on element outside checkbox group');
+    });
+
+    it(`becomes "touched" once a single element of the group becomes "touched" via mouse interaction
+      (e.g. user clicks on checkbox)`, async () => {
+      const el = await fixture(html`
+        <${tag}>
+          <${childTag} name="myGroup[]"></${childTag}>
+          <${childTag} name="myGroup[]"></${childTag}>
+        </${tag}>
+      `);
+      await nextFrame();
+
+      el.children[1].focus();
+      expect(el.touched).to.equal(false, 'initially, touched state is false');
+      el.children[1].click();
+      expect(el.touched).to.equal(
+        true,
+        `focus is initiated via a mouse event, thus fieldset/checkbox-group as a whole is considered touched`,
+      );
     });
   });
 
