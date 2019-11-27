@@ -5,6 +5,8 @@ import '@lion/icon/lion-icon.js';
 import '@lion/button/lion-button.js';
 import '../lion-tooltip.js';
 
+import './tail.stories.js';
+
 const tooltipDemoStyle = css`
   .demo-box {
     width: 200px;
